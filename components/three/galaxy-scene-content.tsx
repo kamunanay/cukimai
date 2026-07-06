@@ -77,6 +77,9 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     const rimLight = new THREE.DirectionalLight(0xffd700, 0.5);
     rimLight.position.set(0, -3, 8);
     scene.add(rimLight);
+    const backLight = new THREE.DirectionalLight(0x4466ff, 0.3);
+    backLight.position.set(-2, -1, -8);
+    scene.add(backLight);
 
     // Stars
     const starsGeo = new THREE.BufferGeometry();
@@ -89,7 +92,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
 
     const coinObjects: THREE.Group[] = [];
 
-    // ─── TEKSTUR COIN REALISTIS ───
+    // ─── TEKSTUR COIN REALISTIS (tanpa border putih) ───
     const createRealisticCoinTexture = (data: any) => {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
@@ -97,21 +100,22 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       const ctx = canvas.getContext('2d')!;
 
       const baseColor = new THREE.Color(data.color);
-      const lightColor = baseColor.clone().lerp(new THREE.Color(0xffffff), 0.4);
-      const darkColor = baseColor.clone().lerp(new THREE.Color(0x000000), 0.3);
+      const lightColor = baseColor.clone().lerp(new THREE.Color(0xffffff), 0.45);
+      const darkColor = baseColor.clone().lerp(new THREE.Color(0x000000), 0.35);
       const isGold = data.isGold || false;
       const isCrypto = data.isCrypto || false;
 
+      // ─ Background radial gradient ─
       const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
       if (isGold) {
         grad.addColorStop(0, '#f5d742');
-        grad.addColorStop(0.3, '#e8b830');
-        grad.addColorStop(0.6, '#c99220');
-        grad.addColorStop(0.85, '#a07018');
-        grad.addColorStop(1, '#7a5510');
+        grad.addColorStop(0.2, '#e8b830');
+        grad.addColorStop(0.5, '#d4a020');
+        grad.addColorStop(0.8, '#b07818');
+        grad.addColorStop(1, '#8c5510');
       } else if (isCrypto) {
         grad.addColorStop(0, lightColor.getStyle());
-        grad.addColorStop(0.4, baseColor.getStyle());
+        grad.addColorStop(0.35, baseColor.getStyle());
         grad.addColorStop(0.7, baseColor.getStyle());
         grad.addColorStop(0.9, darkColor.getStyle());
         grad.addColorStop(1, '#0a0a1a');
@@ -124,23 +128,23 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       }
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(256, 256, 240, 0, Math.PI * 2);
+      ctx.arc(256, 256, 245, 0, Math.PI * 2);
       ctx.fill();
 
-      // Inner emboss rings
-      for (let r = 220; r > 40; r -= 12) {
-        ctx.strokeStyle = r % 24 === 0 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
-        ctx.lineWidth = 1.5;
+      // ─ Inner emboss rings (NO white border) ─
+      for (let r = 230; r > 30; r -= 14) {
+        ctx.strokeStyle = r % 28 === 0 ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)';
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.arc(256, 256, r, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      // "IN GOD WE TRUST"
+      // ─ "IN GOD WE TRUST" (top arc) ─
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.4)';
-      ctx.font = 'bold 30px "Times New Roman", "Inter", serif';
+      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.35)';
+      ctx.font = 'bold 28px "Times New Roman", "Inter", serif';
       const text1 = 'IN GOD WE TRUST';
       for (let i = 0; i < text1.length; i++) {
         const angle = -Math.PI * 0.7 + (i / (text1.length - 1)) * Math.PI * 1.4;
@@ -153,9 +157,9 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         ctx.restore();
       }
 
-      // "PLURIBUS UNUM"
-      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.3)';
-      ctx.font = 'bold 24px "Times New Roman", "Inter", serif';
+      // ─ "PLURIBUS UNUM" (bottom arc) ─
+      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.25)';
+      ctx.font = 'bold 22px "Times New Roman", "Inter", serif';
       const text2 = 'PLURIBUS UNUM';
       for (let i = 0; i < text2.length; i++) {
         const angle = Math.PI * 0.7 - (i / (text2.length - 1)) * Math.PI * 1.4;
@@ -168,17 +172,17 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         ctx.restore();
       }
 
-      // "UNITED STATES OF AMERICA"
+      // ─ "UNITED STATES OF AMERICA" ─
       ctx.shadowBlur = 0;
-      ctx.fillStyle = isGold ? '#a07018' : 'rgba(255,255,255,0.25)';
-      ctx.font = 'bold 22px "Times New Roman", "Inter", serif';
-      ctx.fillText('UNITED STATES OF AMERICA', 256, 110);
-      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.2)';
-      ctx.font = 'bold 18px "Times New Roman", "Inter", serif';
-      ctx.fillText('ONE ' + data.label.toUpperCase(), 256, 140);
+      ctx.fillStyle = isGold ? '#a07018' : 'rgba(255,255,255,0.2)';
+      ctx.font = 'bold 20px "Times New Roman", "Inter", serif';
+      ctx.fillText('UNITED STATES OF AMERICA', 256, 105);
+      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.15)';
+      ctx.font = 'bold 16px "Times New Roman", "Inter", serif';
+      ctx.fillText('ONE ' + data.label.toUpperCase(), 256, 135);
 
-      // Center symbol
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      // ─ CENTER SYMBOL ─
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
       ctx.shadowBlur = 25;
       ctx.shadowOffsetX = 3;
       ctx.shadowOffsetY = 3;
@@ -193,7 +197,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         ctx.fillText(iconMap[data.label] || '◆', 256, 265);
         ctx.shadowBlur = 8;
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 44px "Inter", "Arial", sans-serif';
+        ctx.font = 'bold 42px "Inter", "Arial", sans-serif';
         ctx.fillText(data.label, 256, 345);
       } else if (isGold) {
         ctx.fillStyle = '#f5c842';
@@ -201,7 +205,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         ctx.fillText('Au', 256, 255);
         ctx.shadowBlur = 5;
         ctx.fillStyle = '#8c6010';
-        ctx.font = 'bold 32px "Inter", "Arial", sans-serif';
+        ctx.font = 'bold 30px "Inter", "Arial", sans-serif';
         ctx.fillText('999.9', 256, 330);
         ctx.fillText('GOLD', 256, 375);
       } else {
@@ -210,26 +214,35 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         ctx.fillText(data.symbol, 256, 270);
         ctx.shadowBlur = 5;
         ctx.fillStyle = '#444';
-        ctx.font = 'bold 38px "Inter", "Arial", sans-serif';
+        ctx.font = 'bold 36px "Inter", "Arial", sans-serif';
         ctx.fillText(data.label, 256, 350);
       }
 
-      // Year
+      // ─ Year ─
       ctx.shadowBlur = 0;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
-      ctx.fillStyle = isGold ? '#a07018' : 'rgba(255,255,255,0.12)';
-      ctx.font = 'bold 20px "Inter", "Arial", sans-serif';
+      ctx.fillStyle = isGold ? '#a07018' : 'rgba(255,255,255,0.1)';
+      ctx.font = 'bold 18px "Inter", "Arial", sans-serif';
       ctx.fillText('2025', 256, 455);
 
-      // Reflection highlight
-      const hl = ctx.createRadialGradient(160, 160, 20, 200, 200, 200);
-      hl.addColorStop(0, 'rgba(255,255,255,0.15)');
-      hl.addColorStop(0.5, 'rgba(255,255,255,0.03)');
+      // ─ Reflection highlight ─
+      const hl = ctx.createRadialGradient(140, 140, 20, 190, 190, 210);
+      hl.addColorStop(0, 'rgba(255,255,255,0.18)');
+      hl.addColorStop(0.4, 'rgba(255,255,255,0.05)');
       hl.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = hl;
       ctx.beginPath();
-      ctx.arc(200, 200, 200, 0, Math.PI * 2);
+      ctx.arc(190, 190, 210, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ─ Secondary shadow (bottom right) ─
+      const shadow = ctx.createRadialGradient(380, 380, 20, 400, 400, 180);
+      shadow.addColorStop(0, 'rgba(0,0,0,0.08)');
+      shadow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = shadow;
+      ctx.beginPath();
+      ctx.arc(400, 400, 180, 0, Math.PI * 2);
       ctx.fill();
 
       return new THREE.CanvasTexture(canvas);
@@ -242,16 +255,18 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
 
       const material = new THREE.MeshPhysicalMaterial({
         map: texture,
-        metalness: data.isGold ? 0.95 : 0.8,
-        roughness: data.isGold ? 0.12 : 0.2,
-        clearcoat: 0.5,
-        clearcoatRoughness: 0.15,
+        metalness: data.isGold ? 0.95 : 0.82,
+        roughness: data.isGold ? 0.10 : 0.18,
+        clearcoat: 0.6,
+        clearcoatRoughness: 0.12,
         reflectivity: 1,
-        envMapIntensity: 2.0,
+        envMapIntensity: 2.2,
         emissive: new THREE.Color(data.color),
-        emissiveIntensity: data.isCrypto ? 0.12 : 0.04,
+        emissiveIntensity: data.isCrypto ? 0.10 : 0.03,
+        side: THREE.DoubleSide,
       });
 
+      // ─ Coin body (tanpa silver ring) ─
       const geo = new THREE.CylinderGeometry(size, size, size * 0.14, 64);
       const mesh = new THREE.Mesh(geo, material);
       mesh.castShadow = true;
@@ -259,22 +274,41 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       mesh.rotation.x = Math.PI / 2;
       group.add(mesh);
 
-      // Inner glow ring (BUKAN ring silver)
-      const glowGeo = new THREE.TorusGeometry(size * 0.88, size * 0.025, 24, 48);
+      // ─ Inner glow ring (soft, tanpa border) ─
+      const glowGeo = new THREE.TorusGeometry(size * 0.85, size * 0.02, 24, 48);
       const glowMat = new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
         emissive: new THREE.Color(data.color),
-        emissiveIntensity: 0.3,
+        emissiveIntensity: 0.25,
         transparent: true,
-        opacity: 0.25,
+        opacity: 0.2,
         blending: THREE.AdditiveBlending,
         metalness: 0,
         roughness: 0.5,
+        side: THREE.DoubleSide,
       });
       const glow = new THREE.Mesh(glowGeo, glowMat);
       glow.rotation.x = Math.PI / 2;
-      glow.position.z = 0.005;
+      glow.position.z = 0.003;
       group.add(glow);
+
+      // ─ Tiny inner glow (center) ─
+      const centerGlowGeo = new THREE.CircleGeometry(size * 0.3, 16);
+      const centerGlowMat = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(data.color),
+        emissive: new THREE.Color(data.color),
+        emissiveIntensity: 0.08,
+        transparent: true,
+        opacity: 0.15,
+        blending: THREE.AdditiveBlending,
+        metalness: 0,
+        roughness: 0.8,
+        side: THREE.DoubleSide,
+      });
+      const centerGlow = new THREE.Mesh(centerGlowGeo, centerGlowMat);
+      centerGlow.rotation.x = Math.PI / 2;
+      centerGlow.position.z = 0.002;
+      group.add(centerGlow);
 
       group.position.set(data.pos[0], data.pos[1], data.pos[2]);
       group.userData = {
@@ -291,7 +325,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       coinObjects.push(group);
     });
 
-    // Decorative ring
+    // ─ Decorative orbit ring ─
     const ringPoints = [];
     for (let i = 0; i <= 80; i++) {
       const theta = (i / 80) * Math.PI * 2;
@@ -303,18 +337,33 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     }
     const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
     const ringLine = new THREE.Line(ringGeo, new THREE.LineBasicMaterial({
-      color: 0xf5c842, transparent: true, opacity: 0.06,
+      color: 0xf5c842, transparent: true, opacity: 0.05,
     }));
     scene.add(ringLine);
 
-    // ─── RAYCASTER ───
+    // ─ Second orbit ring ─
+    const ringPoints2 = [];
+    for (let i = 0; i <= 80; i++) {
+      const theta = (i / 80) * Math.PI * 2;
+      ringPoints2.push(new THREE.Vector3(
+        Math.cos(theta + 0.5) * 4.8,
+        0.3 + Math.cos(theta * 3) * 0.06,
+        Math.sin(theta + 0.5) * 4.8
+      ));
+    }
+    const ringGeo2 = new THREE.BufferGeometry().setFromPoints(ringPoints2);
+    const ringLine2 = new THREE.Line(ringGeo2, new THREE.LineBasicMaterial({
+      color: 0x4488ff, transparent: true, opacity: 0.03,
+    }));
+    scene.add(ringLine2);
+
+    // ─ Raycaster ─
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    let hovered: THREE.Group | null = null;
+    let hovered: THREE.Object3D | null = null;
 
     renderer.domElement.style.pointerEvents = 'auto';
 
-    // Click handler
     renderer.domElement.addEventListener('click', (event) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -333,7 +382,6 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       }
     });
 
-    // Hover handler — FIXED with type guard
     renderer.domElement.addEventListener('mousemove', (event) => {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -343,25 +391,23 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       coinObjects.forEach(g => g.children.forEach(c => { if (c instanceof THREE.Mesh) meshes.push(c); }));
       const hits = raycaster.intersectObjects(meshes);
       renderer.domElement.style.cursor = hits.length > 0 ? 'pointer' : 'default';
-
       if (hovered) {
         const ud = hovered.userData;
-        if (ud?.mat) ud.mat.emissiveIntensity = 0.04;
+        if (ud?.mat) ud.mat.emissiveIntensity = 0.03;
         hovered = null;
       }
       if (hits.length > 0) {
         let parent = hits[0].object.parent;
         while (parent && !parent.userData?.label) parent = parent.parent;
-        // ✅ FIX: Pastikan parent adalah THREE.Group
         if (parent && parent.type === 'Group') {
-          hovered = parent as THREE.Group;
+          hovered = parent;
           const ud = parent.userData;
           if (ud?.mat) ud.mat.emissiveIntensity = 0.5;
         }
       }
     });
 
-    // ─── ANIMATION ───
+    // ─ Animation ─
     const clock = new THREE.Clock();
     function animate() {
       const t = clock.getElapsedTime();
