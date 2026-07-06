@@ -2,9 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { getGoldPrice } from '../services/gold';
-import LivePriceCard from '../components/ui/live-price-card';
-import PriceChart from '../components/charts/price-chart';
+import { getGoldPrice } from '../../services/gold';
+import LivePriceCard from '../../components/ui/live-price-card';
+import PriceChart from '../../components/charts/price-chart';
 
 export default function GoldPage() {
   const { data, isLoading } = useQuery({
