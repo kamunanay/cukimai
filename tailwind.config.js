@@ -26,14 +26,10 @@ module.exports = {
       keyframes: {
         pulse: { "0%,100%": { opacity: 1 }, "50%": { opacity: 0.5 } },
         shimmer: { "0%": { backgroundPosition: "-200% 0" }, "100%": { backgroundPosition: "200% 0" } },
-        float: { "0%,100%": { transform: "translateY(0px)" }, "50%": { transform: "translateY(-8px)" } },
-        glow: { "0%,100%": { opacity: 0.4 }, "50%": { opacity: 0.8 } },
       },
       animation: {
         pulse: "pulse 2s ease-in-out infinite",
         shimmer: "shimmer 3s linear infinite",
-        float: "float 4s ease-in-out infinite",
-        glow: "glow 2s ease-in-out infinite",
       },
     },
   },
