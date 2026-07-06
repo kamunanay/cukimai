@@ -12,12 +12,6 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 // @ts-ignore
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-// @ts-ignore
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-// @ts-ignore
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
-// @ts-ignore
-import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
 interface PremiumCoinProps {
   symbol: string;
@@ -41,17 +35,10 @@ export function PremiumCoin3D({
   autoRotate = true,
 }: PremiumCoinProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const composerRef = useRef<EffectComposer | null>(null);
-  const meshRef = useRef<THREE.Mesh | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // ─── CLEANUP ───
     while (containerRef.current.firstChild) {
       containerRef.current.removeChild(containerRef.current.firstChild);
     }
@@ -60,18 +47,13 @@ export function PremiumCoin3D({
     const w = container.clientWidth || width;
     const h = container.clientHeight || height;
 
-    // ─── SCENE ───
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a1a);
-    sceneRef.current = scene;
 
-    // ─── CAMERA ───
     const camera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
     camera.position.set(0, 0.3, 6);
     camera.lookAt(0, 0, 0);
-    cameraRef.current = camera;
 
-    // ─── RENDERER ───
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: false,
@@ -84,35 +66,22 @@ export function PremiumCoin3D({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
 
-    // ─── POST-PROCESSING ───
+    // Post-processing
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
     composer.addPass(renderPass);
 
-    // Bloom (kilau emas)
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(w, h),
-      0.2, // strength
-      0.5, // radius
-      0.1 // threshold
+      0.2, 0.5, 0.1
     );
     composer.addPass(bloomPass);
 
-    // Anti-aliasing (FXAA)
-    const fxaaPass = new ShaderPass(FXAAShader);
-    const pixelRatio = renderer.getPixelRatio();
-    fxaaPass.uniforms['resolution'].value.x = 1 / (w * pixelRatio);
-    fxaaPass.uniforms['resolution'].value.y = 1 / (h * pixelRatio);
-    composer.addPass(fxaaPass);
-
-    // Output
     const outputPass = new OutputPass();
     composer.addPass(outputPass);
-    composerRef.current = composer;
 
-    // ─── CONTROLS ───
+    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -124,30 +93,22 @@ export function PremiumCoin3D({
     controls.minPolarAngle = Math.PI / 3.5;
     controls.target.set(0, 0, 0);
     controls.update();
-    controlsRef.current = controls;
 
-    // ─── HDRI ENVIRONMENT MAP ───
+    // Environment
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
 
-    // Buat environment scene dengan studio lighting
     const envScene = new THREE.Scene();
     envScene.background = new THREE.Color(0x1a1a2e);
 
-    // Area light (large plane)
-    const areaLightGeo = new THREE.PlaneGeometry(10, 10);
-    const areaLightMat = new THREE.MeshBasicMaterial({
-      color: 0xffeedd,
-      transparent: true,
-      opacity: 0.3,
-      side: THREE.DoubleSide,
-    });
-    const areaLight = new THREE.Mesh(areaLightGeo, areaLightMat);
+    const areaLight = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xffeedd, transparent: true, opacity: 0.3, side: THREE.DoubleSide })
+    );
     areaLight.position.set(0, 5, 5);
     areaLight.rotation.x = -Math.PI / 3;
     envScene.add(areaLight);
 
-    // Additional lights for HDRI
     const light1 = new THREE.DirectionalLight(0xffeedd, 1.5);
     light1.position.set(3, 5, 4);
     envScene.add(light1);
@@ -157,16 +118,12 @@ export function PremiumCoin3D({
     const light3 = new THREE.DirectionalLight(0xffd700, 0.6);
     light3.position.set(0, -3, 5);
     envScene.add(light3);
-    const light4 = new THREE.DirectionalLight(0xffffff, 0.3);
-    light4.position.set(-2, -1, -6);
-    envScene.add(light4);
 
     const envTexture = pmremGenerator.fromScene(envScene, 0, 0.1, 100).texture;
     scene.environment = envTexture;
     pmremGenerator.dispose();
 
-    // ─── STUDIO LIGHTS ───
-    // Key light (area light effect)
+    // Studio lights
     const keyLight = new THREE.DirectionalLight(0xffeedd, 4);
     keyLight.position.set(3, 5, 4);
     keyLight.castShadow = true;
@@ -174,31 +131,22 @@ export function PremiumCoin3D({
     keyLight.shadow.mapSize.height = 2048;
     scene.add(keyLight);
 
-    // Fill light (cool)
     const fillLight = new THREE.DirectionalLight(0x4488ff, 1.5);
     fillLight.position.set(-4, 2, -3);
     scene.add(fillLight);
 
-    // Rim light (gold)
     const rimLight = new THREE.DirectionalLight(0xffd700, 1.0);
     rimLight.position.set(0, -3, 5);
     scene.add(rimLight);
 
-    // Back light
-    const backLight = new THREE.DirectionalLight(0x4466ff, 0.5);
-    backLight.position.set(-2, -1, -6);
-    scene.add(backLight);
-
-    // Ambient
     const ambient = new THREE.AmbientLight(0x223355, 0.3);
     scene.add(ambient);
 
-    // Spark light (for glitter)
     const sparkLight = new THREE.PointLight(0xf5c842, 0.8, 8);
     sparkLight.position.set(0, 2, 3);
     scene.add(sparkLight);
 
-    // ─── CREATE COIN GEOMETRY (dengan bevel bertingkat) ───
+    // Coin geometry
     const createCoinGeometry = (): THREE.BufferGeometry => {
       const segments = 80;
       const radius = 1.2;
@@ -210,7 +158,6 @@ export function PremiumCoin3D({
       const r = radius;
       const t = thickness / 2;
 
-      // Profile dengan bevel bertingkat
       points.push(new THREE.Vector2(0, -t));
       points.push(new THREE.Vector2(r - bevel1 * 2, -t));
       points.push(new THREE.Vector2(r - bevel1, -t + bevel1 * 0.6));
@@ -227,7 +174,7 @@ export function PremiumCoin3D({
 
     const coinGeo = createCoinGeometry();
 
-    // ─── REEDED EDGES (gerigi tajam) ───
+    // Reeded edges
     const reededEdges = new THREE.Group();
     const grooveCount = 140;
     const grooveRadius = 1.225;
@@ -256,18 +203,14 @@ export function PremiumCoin3D({
     }
     scene.add(reededEdges);
 
-    // ─── NORMAL MAP (untuk gerigi dan tekstur) ───
+    // Normal map
     const createNormalMap = (): THREE.CanvasTexture => {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext('2d')!;
-
-      // Base normal (blue)
       ctx.fillStyle = '#8080ff';
       ctx.fillRect(0, 0, 512, 512);
-
-      // Reeded edge pattern (normal map)
       for (let i = 0; i < 160; i++) {
         const angle = (i / 160) * Math.PI * 2;
         const x = 256 + Math.cos(angle) * 230;
@@ -275,13 +218,10 @@ export function PremiumCoin3D({
         for (let j = -8; j < 8; j++) {
           const dx = 256 + Math.cos(angle + 0.02) * (230 + j);
           const dy = 256 + Math.sin(angle + 0.02) * (230 + j);
-          const color = j % 2 === 0 ? '#ffff00' : '#0000ff';
-          ctx.fillStyle = color;
+          ctx.fillStyle = j % 2 === 0 ? '#ffff00' : '#0000ff';
           ctx.fillRect(dx, dy, 2, 2);
         }
       }
-
-      // Circular emboss rings
       for (let r = 50; r < 230; r += 20) {
         ctx.strokeStyle = r % 40 === 0 ? '#ffff00' : '#0000ff';
         ctx.lineWidth = 3;
@@ -289,14 +229,13 @@ export function PremiumCoin3D({
         ctx.arc(256, 256, r, 0, Math.PI * 2);
         ctx.stroke();
       }
-
       return new THREE.CanvasTexture(canvas);
     };
 
     const normalMap = createNormalMap();
     normalMap.needsUpdate = true;
 
-    // ─── TEXTURE CANVAS ───
+    // Main texture
     const createCoinTexture = (): THREE.CanvasTexture => {
       const canvas = document.createElement('canvas');
       canvas.width = 2048;
@@ -306,7 +245,6 @@ export function PremiumCoin3D({
       const baseColor = new THREE.Color(color);
       const isGoldCoin = isGold || symbol === 'Au' || label === 'GOLD';
 
-      // ─── Background gradient ───
       const grad = ctx.createRadialGradient(1024, 1024, 0, 1024, 1024, 1024);
       if (isGoldCoin) {
         grad.addColorStop(0, '#f7d94e');
@@ -331,7 +269,7 @@ export function PremiumCoin3D({
       ctx.arc(1024, 1024, 1000, 0, Math.PI * 2);
       ctx.fill();
 
-      // ─── Brushed metal ───
+      // Brushed metal
       for (let i = 0; i < 800; i++) {
         const x = Math.random() * 2048;
         const y = Math.random() * 2048;
@@ -345,7 +283,7 @@ export function PremiumCoin3D({
         ctx.stroke();
       }
 
-      // ─── Scratches ───
+      // Scratches
       for (let i = 0; i < 200; i++) {
         const x = 200 + Math.random() * 1648;
         const y = 200 + Math.random() * 1648;
@@ -359,7 +297,7 @@ export function PremiumCoin3D({
         ctx.stroke();
       }
 
-      // ─── Engraved rings ───
+      // Engraved rings
       for (let r = 160; r < 980; r += 30) {
         ctx.strokeStyle = r % 60 === 0 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
         ctx.lineWidth = 2;
@@ -368,7 +306,7 @@ export function PremiumCoin3D({
         ctx.stroke();
       }
 
-      // ─── Stars around border ───
+      // Stars
       for (let i = 0; i < 24; i++) {
         const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
         const x = 1024 + Math.cos(angle) * 870;
@@ -389,13 +327,14 @@ export function PremiumCoin3D({
         ctx.fill();
       }
 
-      // ─── "IN GOD WE TRUST" ───
+      // Text arcs
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(0,0,0,0.3)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetX = 2;
       ctx.shadowOffsetY = 2;
+
       ctx.fillStyle = isGoldCoin ? '#7a5510' : 'rgba(255,255,255,0.3)';
       ctx.font = 'bold 52px "Times New Roman", "Inter", serif';
       const text1 = 'IN GOD WE TRUST';
@@ -410,7 +349,6 @@ export function PremiumCoin3D({
         ctx.restore();
       }
 
-      // ─── "PLURIBUS UNUM" ───
       ctx.fillStyle = isGoldCoin ? '#7a5510' : 'rgba(255,255,255,0.2)';
       ctx.font = 'bold 40px "Times New Roman", "Inter", serif';
       const text2 = 'PLURIBUS UNUM';
@@ -425,7 +363,6 @@ export function PremiumCoin3D({
         ctx.restore();
       }
 
-      // ─── "UNITED STATES OF AMERICA" ───
       ctx.shadowBlur = 0;
       ctx.fillStyle = isGoldCoin ? '#8c6010' : 'rgba(255,255,255,0.15)';
       ctx.font = 'bold 38px "Times New Roman", "Inter", serif';
@@ -434,7 +371,7 @@ export function PremiumCoin3D({
       ctx.font = 'bold 30px "Times New Roman", "Inter", serif';
       ctx.fillText('ONE ' + label.toUpperCase(), 1024, 470);
 
-      // ─── CENTER SYMBOL (Logo timbul) ───
+      // Center symbol
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 40;
       ctx.shadowOffsetX = 3;
@@ -473,7 +410,6 @@ export function PremiumCoin3D({
         ctx.fillText(label, 1024, 1340);
       }
 
-      // ─── Year ───
       ctx.shadowBlur = 0;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
@@ -481,12 +417,10 @@ export function PremiumCoin3D({
       ctx.font = 'bold 34px "Inter", "Arial", sans-serif';
       ctx.fillText('2025', 1024, 1780);
 
-      // ─── Mint mark ───
       ctx.fillStyle = isGoldCoin ? '#8c6010' : 'rgba(255,255,255,0.06)';
       ctx.font = 'bold 28px "Inter", "Arial", sans-serif';
       ctx.fillText('E', 1550, 1780);
 
-      // ─── Reflection highlight ───
       const hl = ctx.createRadialGradient(480, 480, 40, 600, 600, 500);
       hl.addColorStop(0, 'rgba(255,255,255,0.15)');
       hl.addColorStop(0.3, 'rgba(255,255,255,0.05)');
@@ -496,7 +430,6 @@ export function PremiumCoin3D({
       ctx.arc(600, 600, 500, 0, Math.PI * 2);
       ctx.fill();
 
-      // ─── Ambient occlusion ───
       const ao = ctx.createRadialGradient(1400, 1400, 40, 1500, 1500, 500);
       ao.addColorStop(0, 'rgba(0,0,0,0.1)');
       ao.addColorStop(1, 'rgba(0,0,0,0)');
@@ -512,7 +445,6 @@ export function PremiumCoin3D({
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     texture.needsUpdate = true;
 
-    // ─── COIN MATERIAL ───
     const material = new THREE.MeshPhysicalMaterial({
       map: texture,
       normalMap: normalMap,
@@ -529,57 +461,38 @@ export function PremiumCoin3D({
       side: THREE.DoubleSide,
     });
 
-    // ─── COIN MESH ───
     const mesh = new THREE.Mesh(coinGeo, material);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.rotation.x = -0.05;
     scene.add(mesh);
-    meshRef.current = mesh;
 
-    // ─── FLOATING ANIMATION ───
+    // Floating animation
     let time = 0;
     const floatAmplitude = 0.08;
     const floatSpeed = 0.8;
 
-    // ─── ANIMATION LOOP ───
     function animate() {
       requestAnimationFrame(animate);
-
       time += 0.01;
       const floatOffset = Math.sin(time * floatSpeed) * floatAmplitude;
-      if (mesh) {
-        mesh.position.y = floatOffset;
-      }
-
-      // Spark light animation
+      mesh.position.y = floatOffset;
       sparkLight.intensity = 0.5 + Math.sin(time * 1.5) * 0.2;
-
       controls.update();
       composer.render();
     }
-
     animate();
 
-    // ─── RESIZE ───
     const resize = () => {
       const w2 = container.clientWidth || width;
       const h2 = container.clientHeight || height;
-      if (camera) {
-        camera.aspect = w2 / h2;
-        camera.updateProjectionMatrix();
-      }
+      camera.aspect = w2 / h2;
+      camera.updateProjectionMatrix();
       renderer.setSize(w2, h2);
       composer.setSize(w2, h2);
-
-      // Update FXAA resolution
-      const pixelRatio2 = renderer.getPixelRatio();
-      fxaaPass.uniforms['resolution'].value.x = 1 / (w2 * pixelRatio2);
-      fxaaPass.uniforms['resolution'].value.y = 1 / (h2 * pixelRatio2);
     };
     window.addEventListener('resize', resize);
 
-    // ─── CLEANUP ───
     return () => {
       window.removeEventListener('resize', resize);
       if (container.contains(renderer.domElement)) {
