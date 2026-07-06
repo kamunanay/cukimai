@@ -77,8 +77,8 @@ export function PremiumCoin3D({
     renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.physicallyCorrectLights = true;
+    // Hapus renderer.physicallyCorrectLights karena tidak tersedia di versi ini
+    // renderer.outputColorSpace = THREE.SRGBColorSpace; // sudah default di versi baru
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
