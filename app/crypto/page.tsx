@@ -2,9 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { getCryptoPrices } from '../../services/crypto';
-import LivePriceCard from '../../components/ui/live-price-card';
-import PriceChart from '../../components/charts/price-chart';
+import { getCryptoPrices } from '../services/crypto';
+import LivePriceCard from '../components/ui/live-price-card';
+import PriceChart from '../components/charts/price-chart';
 
 export default function CryptoPage() {
   const { data, isLoading } = useQuery({
@@ -18,7 +18,7 @@ export default function CryptoPage() {
     { id: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
     { id: 'solana', symbol: 'SOL', name: 'Solana' },
     { id: 'ripple', symbol: 'XRP', name: 'Ripple' },
-    { id: 'bnb', symbol: 'BNB', name: 'BNB' },
+    // BNB dihapus
   ];
 
   return (
@@ -33,7 +33,7 @@ export default function CryptoPage() {
           <p className="text-white/40 text-sm mt-1">Live prices · 24h change</p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {cryptos.map((crypto, i) => {
             const price = data?.[crypto.id]?.usd;
             const change = data?.[crypto.id]?.usd_24h_change;
