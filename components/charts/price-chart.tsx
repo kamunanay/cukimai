@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, IChartApi, CandlestickData, Time } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, Time } from 'lightweight-charts';
 
 export default function PriceChart({ symbol, timeframe = '1D' }: { symbol: string; timeframe?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
