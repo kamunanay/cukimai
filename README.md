@@ -4,7 +4,7 @@
 
 ### World Financial Galaxy
 
-A modern financial platform for **Forex**, **Crypto**, and **Gold** with a premium UI inspired by Apple Vision Pro, TradingView, and Bloomberg.
+A modern financial platform for **Forex**, **Crypto**, and **Gold** with a premium UI inspired Api CoinGecco, Goldapi, Cryptodesk.
 
 <p>
 <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=nextdotjs">
