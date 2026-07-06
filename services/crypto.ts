@@ -1,5 +1,13 @@
 import axios from 'axios';
-import { CryptoData } from '../types';
+
+export interface CryptoData {
+  [key: string]: { 
+    usd: number; 
+    usd_24h_change: number;
+    volume?: number;
+    market_cap?: number;
+  };
+}
 
 export async function getCryptoPrices(): Promise<CryptoData> {
   try {
