@@ -1,6 +1,11 @@
 import { cn } from '../../lib/utils';
 
-export function Skeleton({ className, count = 1 }: { className?: string; count?: number }) {
+interface SkeletonProps {
+  className?: string;
+  count?: number;
+}
+
+export function Skeleton({ className, count = 1 }: SkeletonProps) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
@@ -15,3 +20,6 @@ export function Skeleton({ className, count = 1 }: { className?: string; count?:
     </>
   );
 }
+
+// ✅ Tambahkan export default
+export default Skeleton;
