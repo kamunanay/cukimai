@@ -67,24 +67,9 @@ export default function CurrencyConverter() {
     }
   }, [amount, to, data]);
 
-  const getCurrencyIcon = (code: string): string => {
-    const icons: Record<string, string> = {
-      USD: '$', EUR: '€', GBP: '£', JPY: '¥', IDR: 'Rp',
-      AUD: 'A$', CNY: '¥', SGD: 'S$', MYR: 'RM', KRW: '₩',
-      INR: '₹', CHF: 'CHF', CAD: 'C$', NZD: 'NZ$', THB: '฿',
-      VND: '₫', PHP: '₱',
-    };
-    return icons[code] || code;
-  };
-
   const getCurrencyFlag = (code: string): string => {
     const found = currencies.find(c => c.code === code);
     return found?.flag || '🌍';
-  };
-
-  const getCurrencyName = (code: string): string => {
-    const found = currencies.find(c => c.code === code);
-    return found?.name || code;
   };
 
   return (
@@ -100,7 +85,6 @@ export default function CurrencyConverter() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* From — FIXED USD */}
         <div>
           <label className="text-sm text-white/40 block mb-2 font-medium">From</label>
           <div className="relative bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 flex items-center gap-3">
@@ -112,7 +96,6 @@ export default function CurrencyConverter() {
           </div>
         </div>
 
-        {/* Amount */}
         <div>
           <label className="text-sm text-white/40 block mb-2 font-medium">Amount</label>
           <input
@@ -125,7 +108,6 @@ export default function CurrencyConverter() {
           />
         </div>
 
-        {/* To */}
         <div>
           <label className="text-sm text-white/40 block mb-2 font-medium">To</label>
           <div className="relative">
@@ -143,14 +125,11 @@ export default function CurrencyConverter() {
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">
               {getCurrencyFlag(to)}
             </span>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none">
-              ▼
-            </div>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 pointer-events-none">▼</div>
           </div>
         </div>
       </div>
 
-      {/* Result */}
       <div className="mt-5 text-center bg-white/5 rounded-2xl py-6 px-4 border border-white/5">
         {isLoading ? (
           <div className="animate-pulse text-white/30">Loading rates...</div>
@@ -174,7 +153,6 @@ export default function CurrencyConverter() {
         )}
       </div>
 
-      {/* Quick select */}
       <div className="mt-4 flex flex-wrap gap-2 justify-center">
         {currencies.filter(c => c.code !== 'USD').slice(0, 6).map((c) => (
           <button
