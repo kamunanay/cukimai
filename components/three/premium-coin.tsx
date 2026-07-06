@@ -12,6 +12,12 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 // @ts-ignore
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+// @ts-ignore
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+// @ts-ignore
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
+// @ts-ignore
+import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
 interface PremiumCoinProps {
   symbol: string;
@@ -60,8 +66,8 @@ export function PremiumCoin3D({
     sceneRef.current = scene;
 
     // ─── CAMERA ───
-    const camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
-    camera.position.set(0, 0.3, 5.5);
+    const camera = new THREE.PerspectiveCamera(30, w / h, 0.1, 100);
+    camera.position.set(0, 0.3, 6);
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
@@ -74,27 +80,34 @@ export function PremiumCoin3D({
     renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.5;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    // Hapus renderer.physicallyCorrectLights karena tidak tersedia di versi ini
-    // renderer.outputColorSpace = THREE.SRGBColorSpace; // sudah default di versi baru
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // ─── POST-PROCESSING (Bloom) ───
+    // ─── POST-PROCESSING ───
     const composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
     composer.addPass(renderPass);
 
+    // Bloom (kilau emas)
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(w, h),
-      0.15, // strength
-      0.4, // radius
-      0.2 // threshold
+      0.2, // strength
+      0.5, // radius
+      0.1 // threshold
     );
     composer.addPass(bloomPass);
 
+    // Anti-aliasing (FXAA)
+    const fxaaPass = new ShaderPass(FXAAShader);
+    const pixelRatio = renderer.getPixelRatio();
+    fxaaPass.uniforms['resolution'].value.x = 1 / (w * pixelRatio);
+    fxaaPass.uniforms['resolution'].value.y = 1 / (h * pixelRatio);
+    composer.addPass(fxaaPass);
+
+    // Output
     const outputPass = new OutputPass();
     composer.addPass(outputPass);
     composerRef.current = composer;
@@ -113,70 +126,100 @@ export function PremiumCoin3D({
     controls.update();
     controlsRef.current = controls;
 
-    // ─── ENVIRONMENT MAP ───
+    // ─── HDRI ENVIRONMENT MAP ───
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
 
+    // Buat environment scene dengan studio lighting
     const envScene = new THREE.Scene();
     envScene.background = new THREE.Color(0x1a1a2e);
 
-    const light1 = new THREE.DirectionalLight(0xffeedd, 0.8);
-    light1.position.set(5, 5, 5);
+    // Area light (large plane)
+    const areaLightGeo = new THREE.PlaneGeometry(10, 10);
+    const areaLightMat = new THREE.MeshBasicMaterial({
+      color: 0xffeedd,
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+    });
+    const areaLight = new THREE.Mesh(areaLightGeo, areaLightMat);
+    areaLight.position.set(0, 5, 5);
+    areaLight.rotation.x = -Math.PI / 3;
+    envScene.add(areaLight);
+
+    // Additional lights for HDRI
+    const light1 = new THREE.DirectionalLight(0xffeedd, 1.5);
+    light1.position.set(3, 5, 4);
     envScene.add(light1);
-    const light2 = new THREE.DirectionalLight(0x4488ff, 0.4);
-    light2.position.set(-5, 0, -5);
+    const light2 = new THREE.DirectionalLight(0x4488ff, 0.8);
+    light2.position.set(-4, 2, -3);
     envScene.add(light2);
-    const light3 = new THREE.DirectionalLight(0xffd700, 0.3);
-    light3.position.set(0, -5, 5);
+    const light3 = new THREE.DirectionalLight(0xffd700, 0.6);
+    light3.position.set(0, -3, 5);
     envScene.add(light3);
+    const light4 = new THREE.DirectionalLight(0xffffff, 0.3);
+    light4.position.set(-2, -1, -6);
+    envScene.add(light4);
 
     const envTexture = pmremGenerator.fromScene(envScene, 0, 0.1, 100).texture;
     scene.environment = envTexture;
     pmremGenerator.dispose();
 
-    // ─── LIGHTS ───
-    const keyLight = new THREE.DirectionalLight(0xffeedd, 3.5);
+    // ─── STUDIO LIGHTS ───
+    // Key light (area light effect)
+    const keyLight = new THREE.DirectionalLight(0xffeedd, 4);
     keyLight.position.set(3, 5, 4);
     keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x4488ff, 1.2);
-    fillLight.position.set(-4, 2, -5);
+    // Fill light (cool)
+    const fillLight = new THREE.DirectionalLight(0x4488ff, 1.5);
+    fillLight.position.set(-4, 2, -3);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0xffd700, 0.8);
-    rimLight.position.set(0, -3, 6);
+    // Rim light (gold)
+    const rimLight = new THREE.DirectionalLight(0xffd700, 1.0);
+    rimLight.position.set(0, -3, 5);
     scene.add(rimLight);
 
-    const backLight = new THREE.DirectionalLight(0x4466ff, 0.4);
-    backLight.position.set(-2, -1, -8);
+    // Back light
+    const backLight = new THREE.DirectionalLight(0x4466ff, 0.5);
+    backLight.position.set(-2, -1, -6);
     scene.add(backLight);
 
+    // Ambient
     const ambient = new THREE.AmbientLight(0x223355, 0.3);
     scene.add(ambient);
 
-    const sparkLight = new THREE.PointLight(0xf5c842, 0.6, 8);
+    // Spark light (for glitter)
+    const sparkLight = new THREE.PointLight(0xf5c842, 0.8, 8);
     sparkLight.position.set(0, 2, 3);
     scene.add(sparkLight);
 
-    // ─── CREATE COIN GEOMETRY ───
+    // ─── CREATE COIN GEOMETRY (dengan bevel bertingkat) ───
     const createCoinGeometry = (): THREE.BufferGeometry => {
-      const segments = 64;
+      const segments = 80;
       const radius = 1.2;
-      const thickness = 0.18;
-      const bevelRadius = 0.04;
+      const thickness = 0.2;
+      const bevel1 = 0.06;
+      const bevel2 = 0.03;
 
       const points: THREE.Vector2[] = [];
       const r = radius;
       const t = thickness / 2;
 
+      // Profile dengan bevel bertingkat
       points.push(new THREE.Vector2(0, -t));
-      points.push(new THREE.Vector2(r - bevelRadius * 1.5, -t));
-      points.push(new THREE.Vector2(r - bevelRadius * 0.5, -t + bevelRadius * 0.8));
-      points.push(new THREE.Vector2(r, -t + bevelRadius));
-      points.push(new THREE.Vector2(r, t - bevelRadius));
-      points.push(new THREE.Vector2(r - bevelRadius * 0.5, t - bevelRadius * 0.8));
-      points.push(new THREE.Vector2(r - bevelRadius * 1.5, t));
+      points.push(new THREE.Vector2(r - bevel1 * 2, -t));
+      points.push(new THREE.Vector2(r - bevel1, -t + bevel1 * 0.6));
+      points.push(new THREE.Vector2(r - bevel1 * 0.5, -t + bevel1));
+      points.push(new THREE.Vector2(r, -t + bevel1 + bevel2));
+      points.push(new THREE.Vector2(r, t - bevel1 - bevel2));
+      points.push(new THREE.Vector2(r - bevel1 * 0.5, t - bevel1));
+      points.push(new THREE.Vector2(r - bevel1, t - bevel1 * 0.6));
+      points.push(new THREE.Vector2(r - bevel1 * 2, t));
       points.push(new THREE.Vector2(0, t));
 
       return new THREE.LatheGeometry(points, segments);
@@ -184,12 +227,12 @@ export function PremiumCoin3D({
 
     const coinGeo = createCoinGeometry();
 
-    // ─── REEDED EDGES ───
+    // ─── REEDED EDGES (gerigi tajam) ───
     const reededEdges = new THREE.Group();
-    const grooveCount = 120;
-    const grooveRadius = 1.22;
-    const grooveDepth = 0.015;
-    const grooveWidth = 0.008;
+    const grooveCount = 140;
+    const grooveRadius = 1.225;
+    const grooveDepth = 0.02;
+    const grooveWidth = 0.006;
 
     for (let i = 0; i < grooveCount; i++) {
       const angle = (i / grooveCount) * Math.PI * 2;
@@ -197,13 +240,13 @@ export function PremiumCoin3D({
       const z = Math.sin(angle) * grooveRadius;
 
       const groove = new THREE.Mesh(
-        new THREE.BoxGeometry(grooveWidth, 0.22, grooveDepth),
+        new THREE.BoxGeometry(grooveWidth, 0.24, grooveDepth),
         new THREE.MeshPhysicalMaterial({
           color: 0x8c6010,
-          metalness: 0.9,
-          roughness: 0.3,
+          metalness: 0.95,
+          roughness: 0.2,
           emissive: 0x4a3008,
-          emissiveIntensity: 0.1,
+          emissiveIntensity: 0.05,
         })
       );
       groove.position.set(x, 0, z);
@@ -212,6 +255,46 @@ export function PremiumCoin3D({
       reededEdges.add(groove);
     }
     scene.add(reededEdges);
+
+    // ─── NORMAL MAP (untuk gerigi dan tekstur) ───
+    const createNormalMap = (): THREE.CanvasTexture => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d')!;
+
+      // Base normal (blue)
+      ctx.fillStyle = '#8080ff';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Reeded edge pattern (normal map)
+      for (let i = 0; i < 160; i++) {
+        const angle = (i / 160) * Math.PI * 2;
+        const x = 256 + Math.cos(angle) * 230;
+        const y = 256 + Math.sin(angle) * 230;
+        for (let j = -8; j < 8; j++) {
+          const dx = 256 + Math.cos(angle + 0.02) * (230 + j);
+          const dy = 256 + Math.sin(angle + 0.02) * (230 + j);
+          const color = j % 2 === 0 ? '#ffff00' : '#0000ff';
+          ctx.fillStyle = color;
+          ctx.fillRect(dx, dy, 2, 2);
+        }
+      }
+
+      // Circular emboss rings
+      for (let r = 50; r < 230; r += 20) {
+        ctx.strokeStyle = r % 40 === 0 ? '#ffff00' : '#0000ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(256, 256, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      return new THREE.CanvasTexture(canvas);
+    };
+
+    const normalMap = createNormalMap();
+    normalMap.needsUpdate = true;
 
     // ─── TEXTURE CANVAS ───
     const createCoinTexture = (): THREE.CanvasTexture => {
@@ -223,7 +306,7 @@ export function PremiumCoin3D({
       const baseColor = new THREE.Color(color);
       const isGoldCoin = isGold || symbol === 'Au' || label === 'GOLD';
 
-      // Background
+      // ─── Background gradient ───
       const grad = ctx.createRadialGradient(1024, 1024, 0, 1024, 1024, 1024);
       if (isGoldCoin) {
         grad.addColorStop(0, '#f7d94e');
@@ -248,27 +331,27 @@ export function PremiumCoin3D({
       ctx.arc(1024, 1024, 1000, 0, Math.PI * 2);
       ctx.fill();
 
-      // Brushed metal
-      for (let i = 0; i < 600; i++) {
+      // ─── Brushed metal ───
+      for (let i = 0; i < 800; i++) {
         const x = Math.random() * 2048;
         const y = Math.random() * 2048;
-        const len = 20 + Math.random() * 80;
+        const len = 20 + Math.random() * 100;
         const angle = Math.random() * Math.PI;
-        ctx.strokeStyle = `rgba(255,255,255,${0.01 + Math.random() * 0.03})`;
-        ctx.lineWidth = 1 + Math.random() * 2;
+        ctx.strokeStyle = `rgba(255,255,255,${0.005 + Math.random() * 0.025})`;
+        ctx.lineWidth = 0.5 + Math.random() * 2;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
         ctx.stroke();
       }
 
-      // Scratches
-      for (let i = 0; i < 150; i++) {
+      // ─── Scratches ───
+      for (let i = 0; i < 200; i++) {
         const x = 200 + Math.random() * 1648;
         const y = 200 + Math.random() * 1648;
-        const len = 5 + Math.random() * 30;
+        const len = 5 + Math.random() * 40;
         const angle = Math.random() * Math.PI * 2;
-        ctx.strokeStyle = `rgba(0,0,0,${0.02 + Math.random() * 0.06})`;
+        ctx.strokeStyle = `rgba(0,0,0,${0.01 + Math.random() * 0.05})`;
         ctx.lineWidth = 0.5 + Math.random() * 1.5;
         ctx.beginPath();
         ctx.moveTo(x, y);
@@ -276,36 +359,21 @@ export function PremiumCoin3D({
         ctx.stroke();
       }
 
-      // Engraved rings
-      for (let r = 180; r < 980; r += 35) {
-        ctx.strokeStyle = r % 70 === 0 ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-        ctx.lineWidth = 1.5;
+      // ─── Engraved rings ───
+      for (let r = 160; r < 980; r += 30) {
+        ctx.strokeStyle = r % 60 === 0 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(1024, 1024, r, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      // Reeded edge pattern
-      for (let i = 0; i < 160; i++) {
-        const angle = (i / 160) * Math.PI * 2;
-        const x1 = 1024 + Math.cos(angle) * 980;
-        const y1 = 1024 + Math.sin(angle) * 980;
-        const x2 = 1024 + Math.cos(angle) * 960;
-        const y2 = 1024 + Math.sin(angle) * 960;
-        ctx.strokeStyle = i % 2 === 0 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
-
-      // Stars around border
+      // ─── Stars around border ───
       for (let i = 0; i < 24; i++) {
         const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
         const x = 1024 + Math.cos(angle) * 870;
         const y = 1024 + Math.sin(angle) * 870;
-        const size = 10 + Math.random() * 6;
+        const size = 12 + Math.random() * 6;
         ctx.fillStyle = isGoldCoin ? '#f5c842' : 'rgba(255,255,255,0.3)';
         ctx.shadowColor = 'rgba(0,0,0,0.3)';
         ctx.shadowBlur = 4;
@@ -321,7 +389,7 @@ export function PremiumCoin3D({
         ctx.fill();
       }
 
-      // "IN GOD WE TRUST"
+      // ─── "IN GOD WE TRUST" ───
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(0,0,0,0.3)';
@@ -342,7 +410,7 @@ export function PremiumCoin3D({
         ctx.restore();
       }
 
-      // "PLURIBUS UNUM"
+      // ─── "PLURIBUS UNUM" ───
       ctx.fillStyle = isGoldCoin ? '#7a5510' : 'rgba(255,255,255,0.2)';
       ctx.font = 'bold 40px "Times New Roman", "Inter", serif';
       const text2 = 'PLURIBUS UNUM';
@@ -357,7 +425,7 @@ export function PremiumCoin3D({
         ctx.restore();
       }
 
-      // "UNITED STATES OF AMERICA"
+      // ─── "UNITED STATES OF AMERICA" ───
       ctx.shadowBlur = 0;
       ctx.fillStyle = isGoldCoin ? '#8c6010' : 'rgba(255,255,255,0.15)';
       ctx.font = 'bold 38px "Times New Roman", "Inter", serif';
@@ -366,7 +434,7 @@ export function PremiumCoin3D({
       ctx.font = 'bold 30px "Times New Roman", "Inter", serif';
       ctx.fillText('ONE ' + label.toUpperCase(), 1024, 470);
 
-      // Center symbol
+      // ─── CENTER SYMBOL (Logo timbul) ───
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 40;
       ctx.shadowOffsetX = 3;
@@ -378,7 +446,6 @@ export function PremiumCoin3D({
           ETH: '⟠',
           SOL: '◎',
           XRP: '✕',
-          BNB: '◆',
         };
         ctx.fillStyle = color;
         ctx.font = 'bold 300px "Inter", "Arial", sans-serif';
@@ -406,7 +473,7 @@ export function PremiumCoin3D({
         ctx.fillText(label, 1024, 1340);
       }
 
-      // Year
+      // ─── Year ───
       ctx.shadowBlur = 0;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
@@ -414,24 +481,24 @@ export function PremiumCoin3D({
       ctx.font = 'bold 34px "Inter", "Arial", sans-serif';
       ctx.fillText('2025', 1024, 1780);
 
-      // Mint mark
+      // ─── Mint mark ───
       ctx.fillStyle = isGoldCoin ? '#8c6010' : 'rgba(255,255,255,0.06)';
       ctx.font = 'bold 28px "Inter", "Arial", sans-serif';
       ctx.fillText('E', 1550, 1780);
 
-      // Reflection highlight
+      // ─── Reflection highlight ───
       const hl = ctx.createRadialGradient(480, 480, 40, 600, 600, 500);
-      hl.addColorStop(0, 'rgba(255,255,255,0.12)');
-      hl.addColorStop(0.3, 'rgba(255,255,255,0.04)');
+      hl.addColorStop(0, 'rgba(255,255,255,0.15)');
+      hl.addColorStop(0.3, 'rgba(255,255,255,0.05)');
       hl.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = hl;
       ctx.beginPath();
       ctx.arc(600, 600, 500, 0, Math.PI * 2);
       ctx.fill();
 
-      // Ambient occlusion
+      // ─── Ambient occlusion ───
       const ao = ctx.createRadialGradient(1400, 1400, 40, 1500, 1500, 500);
-      ao.addColorStop(0, 'rgba(0,0,0,0.08)');
+      ao.addColorStop(0, 'rgba(0,0,0,0.1)');
       ao.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = ao;
       ctx.beginPath();
@@ -448,17 +515,18 @@ export function PremiumCoin3D({
     // ─── COIN MATERIAL ───
     const material = new THREE.MeshPhysicalMaterial({
       map: texture,
-      metalness: isGold ? 0.95 : 0.85,
-      roughness: isGold ? 0.1 : 0.18,
-      clearcoat: 0.6,
-      clearcoatRoughness: 0.1,
+      normalMap: normalMap,
+      normalScale: new THREE.Vector2(0.8, 0.8),
+      metalness: isGold ? 0.98 : 0.85,
+      roughness: isGold ? 0.08 : 0.15,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.05,
       reflectivity: 1,
       envMap: envTexture,
-      envMapIntensity: 2.5,
+      envMapIntensity: 3.0,
       emissive: new THREE.Color(color),
       emissiveIntensity: isCrypto ? 0.08 : 0.02,
       side: THREE.DoubleSide,
-      premultipliedAlpha: true,
     });
 
     // ─── COIN MESH ───
@@ -471,7 +539,7 @@ export function PremiumCoin3D({
 
     // ─── FLOATING ANIMATION ───
     let time = 0;
-    const floatAmplitude = 0.06;
+    const floatAmplitude = 0.08;
     const floatSpeed = 0.8;
 
     // ─── ANIMATION LOOP ───
@@ -484,9 +552,10 @@ export function PremiumCoin3D({
         mesh.position.y = floatOffset;
       }
 
-      controls.update();
-      sparkLight.intensity = 0.5 + Math.sin(time * 1.5) * 0.15;
+      // Spark light animation
+      sparkLight.intensity = 0.5 + Math.sin(time * 1.5) * 0.2;
 
+      controls.update();
       composer.render();
     }
 
@@ -502,6 +571,11 @@ export function PremiumCoin3D({
       }
       renderer.setSize(w2, h2);
       composer.setSize(w2, h2);
+
+      // Update FXAA resolution
+      const pixelRatio2 = renderer.getPixelRatio();
+      fxaaPass.uniforms['resolution'].value.x = 1 / (w2 * pixelRatio2);
+      fxaaPass.uniforms['resolution'].value.y = 1 / (h2 * pixelRatio2);
     };
     window.addEventListener('resize', resize);
 
