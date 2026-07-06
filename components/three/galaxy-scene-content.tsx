@@ -46,6 +46,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowShadowMap;
     container.appendChild(renderer.domElement);
 
     const labelRenderer = new CSS2DRenderer();
@@ -66,17 +67,27 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     controls.maxDistance = 25;
     controls.target.set(0, 0, 0);
 
-    // Lights
-    const ambient = new THREE.AmbientLight(0x223355, 0.6);
+    // Enhanced Lights with more realistic setup
+    const ambient = new THREE.AmbientLight(0x223355, 0.8);
     scene.add(ambient);
-    const mainLight = new THREE.DirectionalLight(0xffeedd, 4);
-    mainLight.position.set(5, 10, 7);
+    
+    const mainLight = new THREE.DirectionalLight(0xffeedd, 5);
+    mainLight.position.set(8, 12, 8);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.camera.left = -20;
+    mainLight.shadow.camera.right = 20;
+    mainLight.shadow.camera.top = 20;
+    mainLight.shadow.camera.bottom = -20;
     scene.add(mainLight);
-    const fillLight = new THREE.DirectionalLight(0x4488ff, 0.8);
-    fillLight.position.set(-4, 3, -5);
+    
+    const fillLight = new THREE.DirectionalLight(0x4488ff, 1.2);
+    fillLight.position.set(-8, 6, -8);
     scene.add(fillLight);
-    const rimLight = new THREE.DirectionalLight(0xffd700, 0.5);
-    rimLight.position.set(0, -3, 8);
+    
+    const rimLight = new THREE.DirectionalLight(0xffd700, 0.8);
+    rimLight.position.set(0, -5, 10);
     scene.add(rimLight);
 
     // Stars
@@ -94,75 +105,169 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     const geometriesToDispose: THREE.BufferGeometry[] = [];
     const texturesToDispose: THREE.Texture[] = [];
 
-    const createCoinTexture = (data: any) => {
+    // Create realistic 3D coin with beveled edges and detailed texture
+    const createRealisticCoin = (data: any) => {
+      const group = new THREE.Group();
+      const coinRadius = 0.8;
+      const coinThickness = 0.15;
+
+      // Create canvas texture with gradient and embossed effect
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
+      canvas.width = 512;
+      canvas.height = 512;
       const ctx = canvas.getContext('2d')!;
+
+      // Background
+      const bgGrad = ctx.createLinearGradient(0, 0, 512, 512);
       const col = new THREE.Color(data.color);
-      const light = col.clone().lerp(new THREE.Color(0xffffff), 0.3);
-      const dark = col.clone().lerp(new THREE.Color(0x000000), 0.3);
-      const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-      grad.addColorStop(0, light.getStyle());
-      grad.addColorStop(0.6, col.getStyle());
-      grad.addColorStop(1, dark.getStyle());
-      ctx.fillStyle = grad;
+      const light = col.clone().lerp(new THREE.Color(0xffffff), 0.4);
+      const mid = col.clone();
+      const dark = col.clone().lerp(new THREE.Color(0x000000), 0.4);
+      
+      bgGrad.addColorStop(0, light.getStyle());
+      bgGrad.addColorStop(0.5, mid.getStyle());
+      bgGrad.addColorStop(1, dark.getStyle());
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Add radial gradient for 3D effect
+      const radGrad = ctx.createRadialGradient(256, 256, 0, 256, 256, 360);
+      radGrad.addColorStop(0, 'rgba(255,255,255,0.3)');
+      radGrad.addColorStop(0.5, 'rgba(255,255,255,0)');
+      radGrad.addColorStop(1, 'rgba(0,0,0,0.3)');
+      ctx.fillStyle = radGrad;
       ctx.beginPath();
-      ctx.arc(128, 128, 120, 0, Math.PI * 2);
+      ctx.arc(256, 256, 360, 0, Math.PI * 2);
       ctx.fill();
+
+      // Outer rim - metallic effect
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 8;
+      ctx.globalAlpha = 0.4;
       ctx.beginPath();
-      ctx.arc(128, 128, 115, 0, Math.PI * 2);
+      ctx.arc(256, 256, 240, 0, Math.PI * 2);
       ctx.stroke();
+
+      ctx.globalAlpha = 1;
+
+      // Inner circle with texture
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.beginPath();
+      ctx.arc(256, 256, 200, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Add noise/texture pattern for realism
+      const imageData = ctx.getImageData(0, 0, 512, 512);
+      const data_arr = imageData.data;
+      for (let i = 0; i < data_arr.length; i += 4) {
+        if (Math.random() > 0.97) {
+          data_arr[i + 3] = Math.random() * 50; // Random noise
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      // Symbol text with shadow and glow
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(0,0,0,0.5)';
-      ctx.shadowBlur = 10;
+      
+      // Text shadow
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.font = 'bold 150px "Arial", sans-serif';
+      ctx.fillText(data.symbol, 256, 256);
+
+      // Main symbol text
+      ctx.shadowColor = 'transparent';
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 80px "Inter", "Arial", sans-serif';
-      ctx.fillText(data.symbol, 128, 130);
-      return new THREE.CanvasTexture(canvas);
+      ctx.font = 'bold 140px "Arial", sans-serif';
+      ctx.fillText(data.symbol, 256, 256);
+
+      // Label at bottom
+      ctx.font = 'bold 40px "Arial", sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText(data.label, 256, 380);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.magFilter = THREE.LinearFilter;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texturesToDispose.push(texture);
+
+      // Main coin face (flat top)
+      const mainGeo = new THREE.CylinderGeometry(coinRadius, coinRadius, coinThickness, 64, 8);
+      geometriesToDispose.push(mainGeo);
+      
+      const mainMat = new THREE.MeshPhysicalMaterial({
+        map: texture,
+        metalness: 0.88,
+        roughness: 0.15,
+        clearcoat: 0.6,
+        clearcoatRoughness: 0.1,
+        reflectivity: 1,
+        envMapIntensity: 2.2,
+        emissive: new THREE.Color(data.color),
+        emissiveIntensity: 0.08,
+        normalScale: new THREE.Vector2(0.5, 0.5),
+      });
+      materialsToDispose.push(mainMat);
+      
+      const mainMesh = new THREE.Mesh(mainGeo, mainMat);
+      mainMesh.castShadow = true;
+      mainMesh.receiveShadow = true;
+      group.add(mainMesh);
+
+      // Beveled edge rings for 3D effect
+      const edgeGeo1 = new THREE.TorusGeometry(coinRadius * 0.98, coinThickness * 0.3, 32, 64);
+      geometriesToDispose.push(edgeGeo1);
+      const edgeMat1 = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(data.color).multiplyScalar(0.8),
+        metalness: 0.92,
+        roughness: 0.1,
+        clearcoat: 0.8,
+      });
+      materialsToDispose.push(edgeMat1);
+      const edgeMesh1 = new THREE.Mesh(edgeGeo1, edgeMat1);
+      edgeMesh1.position.z = coinThickness * 0.3;
+      edgeMesh1.castShadow = true;
+      group.add(edgeMesh1);
+
+      // Second edge ring
+      const edgeGeo2 = new THREE.TorusGeometry(coinRadius * 0.96, coinThickness * 0.2, 32, 64);
+      geometriesToDispose.push(edgeGeo2);
+      const edgeMat2 = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(data.color).multiplyScalar(1.2),
+        metalness: 0.85,
+        roughness: 0.2,
+      });
+      materialsToDispose.push(edgeMat2);
+      const edgeMesh2 = new THREE.Mesh(edgeGeo2, edgeMat2);
+      edgeMesh2.position.z = -coinThickness * 0.3;
+      edgeMesh2.castShadow = true;
+      group.add(edgeMesh2);
+
+      // Highlight ring for extra realism
+      const highlightGeo = new THREE.TorusGeometry(coinRadius * 0.7, coinThickness * 0.08, 32, 64);
+      geometriesToDispose.push(highlightGeo);
+      const highlightMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.15,
+      });
+      materialsToDispose.push(highlightMat);
+      const highlightMesh = new THREE.Mesh(highlightGeo, highlightMat);
+      highlightMesh.position.z = coinThickness * 0.5;
+      group.add(highlightMesh);
+
+      group.rotation.x = Math.PI / 2;
+      return group;
     };
 
     coinData.forEach((data) => {
       const group = new THREE.Group();
-      const size = 0.8;
-      const texture = createCoinTexture(data);
-      texturesToDispose.push(texture);
-      
-      const mat = new THREE.MeshPhysicalMaterial({
-        map: texture,
-        metalness: 0.85,
-        roughness: 0.2,
-        clearcoat: 0.4,
-        clearcoatRoughness: 0.2,
-        reflectivity: 1,
-        envMapIntensity: 1.8,
-        emissive: new THREE.Color(data.color),
-        emissiveIntensity: 0.05,
-      });
-      materialsToDispose.push(mat);
-      
-      const geo = new THREE.CylinderGeometry(size, size, size * 0.12, 48);
-      geometriesToDispose.push(geo);
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.rotation.x = Math.PI / 2;
-      group.add(mesh);
-
-      const rimGeo = new THREE.TorusGeometry(size * 1.04, size * 0.04, 32, 48);
-      geometriesToDispose.push(rimGeo);
-      const rimMat = new THREE.MeshPhysicalMaterial({
-        color: 0xdddddd,
-        metalness: 0.9,
-        roughness: 0.15,
-      });
-      materialsToDispose.push(rimMat);
-      const rim = new THREE.Mesh(rimGeo, rimMat);
-      rim.rotation.x = Math.PI / 2;
-      group.add(rim);
+      const coinGroup = createRealisticCoin(data);
+      group.add(coinGroup);
 
       group.position.set(data.pos[0], data.pos[1], data.pos[2]);
       group.userData = {
@@ -174,7 +279,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         baseY: data.pos[1],
         isCrypto: data.isCrypto || false,
         isGold: data.isGold || false,
-        material: mat,
+        coinGroup: coinGroup,
       };
 
       scene.add(group);
@@ -208,16 +313,13 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const meshes: THREE.Mesh[] = [];
-      coinObjects.forEach(g => g.children.forEach(c => { if (c instanceof THREE.Mesh) meshes.push(c); }));
-      const hits = raycaster.intersectObjects(meshes);
-      if (hits.length > 0) {
-        let parent = hits[0].object.parent;
+      const intersects = raycaster.intersectObjects(coinObjects, true);
+      if (intersects.length > 0) {
+        let parent: THREE.Object3D | null = intersects[0].object;
         while (parent && !parent.userData?.label) parent = parent.parent;
-        if (parent && parent instanceof THREE.Group) {
-          const label = parent.userData.label;
+        if (parent && parent.userData?.label) {
           const symbol = parent.userData.symbol;
-          onCoinClick?.(symbol || label);
+          onCoinClick?.(symbol);
         }
       }
     });
@@ -227,22 +329,34 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const meshes: THREE.Mesh[] = [];
-      coinObjects.forEach(g => g.children.forEach(c => { if (c instanceof THREE.Mesh) meshes.push(c); }));
-      const hits = raycaster.intersectObjects(meshes);
-      renderer.domElement.style.cursor = hits.length > 0 ? 'pointer' : 'default';
+      const intersects = raycaster.intersectObjects(coinObjects, true);
+      renderer.domElement.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+      
       if (hovered) {
-        const ud = hovered.userData;
-        if (ud?.material) ud.material.emissiveIntensity = 0.05;
+        const coinGroup = hovered.userData.coinGroup;
+        if (coinGroup) {
+          coinGroup.children.forEach((child: any) => {
+            if (child.material?.emissiveIntensity !== undefined) {
+              child.material.emissiveIntensity = 0.08;
+            }
+          });
+        }
         hovered = null;
       }
-      if (hits.length > 0) {
-        let parent = hits[0].object.parent;
+      
+      if (intersects.length > 0) {
+        let parent: THREE.Object3D | null = intersects[0].object;
         while (parent && !parent.userData?.label) parent = parent.parent;
-        if (parent && parent instanceof THREE.Group) {
-          hovered = parent;
-          const ud = parent.userData;
-          if (ud?.material) ud.material.emissiveIntensity = 0.5;
+        if (parent && parent.userData?.label) {
+          hovered = parent as THREE.Group;
+          const coinGroup = parent.userData.coinGroup;
+          if (coinGroup) {
+            coinGroup.children.forEach((child: any) => {
+              if (child.material?.emissiveIntensity !== undefined) {
+                child.material.emissiveIntensity = 0.25;
+              }
+            });
+          }
         }
       }
     });
