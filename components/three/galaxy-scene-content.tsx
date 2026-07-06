@@ -24,6 +24,7 @@ interface GalaxySceneContentProps {
 
 export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number>();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -83,11 +84,15 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     const starsPos = new Float32Array(3000 * 3);
     for (let i = 0; i < 3000 * 3; i++) starsPos[i] = (Math.random() - 0.5) * 250;
     starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-    scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({
+    const starsMaterial = new THREE.PointsMaterial({
       color: 0x8899bb, size: 0.15, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending,
-    })));
+    });
+    scene.add(new THREE.Points(starsGeo, starsMaterial));
 
     const coinObjects: THREE.Group[] = [];
+    const materialsToDispose: THREE.Material[] = [];
+    const geometriesToDispose: THREE.BufferGeometry[] = [];
+    const texturesToDispose: THREE.Texture[] = [];
 
     const createCoinTexture = (data: any) => {
       const canvas = document.createElement('canvas');
@@ -124,6 +129,8 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       const group = new THREE.Group();
       const size = 0.8;
       const texture = createCoinTexture(data);
+      texturesToDispose.push(texture);
+      
       const mat = new THREE.MeshPhysicalMaterial({
         map: texture,
         metalness: 0.85,
@@ -135,7 +142,10 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         emissive: new THREE.Color(data.color),
         emissiveIntensity: 0.05,
       });
+      materialsToDispose.push(mat);
+      
       const geo = new THREE.CylinderGeometry(size, size, size * 0.12, 48);
+      geometriesToDispose.push(geo);
       const mesh = new THREE.Mesh(geo, mat);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -143,11 +153,13 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       group.add(mesh);
 
       const rimGeo = new THREE.TorusGeometry(size * 1.04, size * 0.04, 32, 48);
+      geometriesToDispose.push(rimGeo);
       const rimMat = new THREE.MeshPhysicalMaterial({
         color: 0xdddddd,
         metalness: 0.9,
         roughness: 0.15,
       });
+      materialsToDispose.push(rimMat);
       const rim = new THREE.Mesh(rimGeo, rimMat);
       rim.rotation.x = Math.PI / 2;
       group.add(rim);
@@ -162,6 +174,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         baseY: data.pos[1],
         isCrypto: data.isCrypto || false,
         isGold: data.isGold || false,
+        material: mat,
       };
 
       scene.add(group);
@@ -175,9 +188,12 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       ringPoints.push(new THREE.Vector3(Math.cos(theta) * 4.2, -0.2, Math.sin(theta) * 4.2));
     }
     const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
-    const ringLine = new THREE.Line(ringGeo, new THREE.LineBasicMaterial({
+    geometriesToDispose.push(ringGeo);
+    const ringMat = new THREE.LineBasicMaterial({
       color: 0xf5c842, transparent: true, opacity: 0.08,
-    }));
+    });
+    materialsToDispose.push(ringMat);
+    const ringLine = new THREE.Line(ringGeo, ringMat);
     scene.add(ringLine);
 
     // Raycaster
@@ -198,7 +214,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       if (hits.length > 0) {
         let parent = hits[0].object.parent;
         while (parent && !parent.userData?.label) parent = parent.parent;
-        if (parent) {
+        if (parent && parent instanceof THREE.Group) {
           const label = parent.userData.label;
           const symbol = parent.userData.symbol;
           onCoinClick?.(symbol || label);
@@ -217,16 +233,16 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       renderer.domElement.style.cursor = hits.length > 0 ? 'pointer' : 'default';
       if (hovered) {
         const ud = hovered.userData;
-        if (ud?.mat) ud.mat.emissiveIntensity = 0.05;
+        if (ud?.material) ud.material.emissiveIntensity = 0.05;
         hovered = null;
       }
       if (hits.length > 0) {
         let parent = hits[0].object.parent;
         while (parent && !parent.userData?.label) parent = parent.parent;
-        if (parent) {
+        if (parent && parent instanceof THREE.Group) {
           hovered = parent;
           const ud = parent.userData;
-          if (ud?.mat) ud.mat.emissiveIntensity = 0.5;
+          if (ud?.material) ud.material.emissiveIntensity = 0.5;
         }
       }
     });
@@ -246,7 +262,7 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       controls.update();
       renderer.render(scene, camera);
       labelRenderer.render(scene, camera);
-      requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(animate);
     }
     animate();
 
@@ -262,9 +278,31 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
 
     return () => {
       window.removeEventListener('resize', resize);
-      container.removeChild(renderer.domElement);
-      container.removeChild(labelRenderer.domElement);
+      
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      geometriesToDispose.forEach(geo => geo.dispose());
+      materialsToDispose.forEach(mat => mat.dispose());
+      texturesToDispose.forEach(tex => tex.dispose());
+      
+      starsGeo?.dispose();
+      starsMaterial?.dispose();
+      
       renderer.dispose();
+      labelRenderer.domElement.remove?.();
+      
+      try {
+        if (container.contains(renderer.domElement)) {
+          container.removeChild(renderer.domElement);
+        }
+        if (container.contains(labelRenderer.domElement)) {
+          container.removeChild(labelRenderer.domElement);
+        }
+      } catch (e) {
+        // Element already removed
+      }
     };
   }, [onCoinClick]);
 
