@@ -1,5 +1,17 @@
 import axios from 'axios';
-import { ForexData } from '../types';
+
+export interface ForexData {
+  usdIdr: number;
+  usdEur: number;
+  usdGbp: number;
+  usdJpy: number;
+  usdAud: number;
+  usdCny: number;
+  usdSgd: number;
+  usdMyr: number;
+  usdKrw: number;
+  usdInr: number;
+}
 
 const API_URL = 'https://api.exchangerate-api.com/v4/latest/USD';
 
