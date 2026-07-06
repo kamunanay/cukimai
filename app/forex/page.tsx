@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { getForexRates } from '../services/forex';
-import LivePriceCard from '../components/ui/live-price-card';
-import PriceChart from '../components/charts/price-chart';
-import CurrencyConverter from '../components/ui/currency-converter';
+import { getForexRates } from '@/services';
+import { LivePriceCard, CurrencyConverter } from '@/components/ui';
+import { PriceChart } from '@/components/charts';
 
 export default function ForexPage() {
   const [selectedPair, setSelectedPair] = useState<string>('USD/IDR');
@@ -48,7 +47,6 @@ export default function ForexPage() {
           </p>
         </motion.div>
 
-        {/* Price Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-8">
           {pairs.map((pair, i) => (
             <motion.div
@@ -74,11 +72,8 @@ export default function ForexPage() {
           ))}
         </div>
 
-        {/* Chart & Converter */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <PriceChart symbol={selectedPair} />
-          </div>
+          <PriceChart symbol={selectedPair} />
           <CurrencyConverter />
         </div>
       </div>
