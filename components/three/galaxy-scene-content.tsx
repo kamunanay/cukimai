@@ -24,7 +24,6 @@ interface GalaxySceneContentProps {
 
 export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number>();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -46,7 +45,6 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowShadowMap;
     container.appendChild(renderer.domElement);
 
     const labelRenderer = new CSS2DRenderer();
@@ -67,27 +65,17 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     controls.maxDistance = 25;
     controls.target.set(0, 0, 0);
 
-    // Enhanced Lights with more realistic setup
-    const ambient = new THREE.AmbientLight(0x223355, 0.8);
+    // Lights
+    const ambient = new THREE.AmbientLight(0x223355, 0.6);
     scene.add(ambient);
-    
-    const mainLight = new THREE.DirectionalLight(0xffeedd, 5);
-    mainLight.position.set(8, 12, 8);
-    mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
-    mainLight.shadow.camera.left = -20;
-    mainLight.shadow.camera.right = 20;
-    mainLight.shadow.camera.top = 20;
-    mainLight.shadow.camera.bottom = -20;
+    const mainLight = new THREE.DirectionalLight(0xffeedd, 4);
+    mainLight.position.set(5, 10, 7);
     scene.add(mainLight);
-    
-    const fillLight = new THREE.DirectionalLight(0x4488ff, 1.2);
-    fillLight.position.set(-8, 6, -8);
+    const fillLight = new THREE.DirectionalLight(0x4488ff, 0.8);
+    fillLight.position.set(-4, 3, -5);
     scene.add(fillLight);
-    
-    const rimLight = new THREE.DirectionalLight(0xffd700, 0.8);
-    rimLight.position.set(0, -5, 10);
+    const rimLight = new THREE.DirectionalLight(0xffd700, 0.5);
+    rimLight.position.set(0, -3, 8);
     scene.add(rimLight);
 
     // Stars
@@ -95,179 +83,199 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
     const starsPos = new Float32Array(3000 * 3);
     for (let i = 0; i < 3000 * 3; i++) starsPos[i] = (Math.random() - 0.5) * 250;
     starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-    const starsMaterial = new THREE.PointsMaterial({
+    scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({
       color: 0x8899bb, size: 0.15, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending,
-    });
-    scene.add(new THREE.Points(starsGeo, starsMaterial));
+    })));
 
     const coinObjects: THREE.Group[] = [];
-    const materialsToDispose: THREE.Material[] = [];
-    const geometriesToDispose: THREE.BufferGeometry[] = [];
-    const texturesToDispose: THREE.Texture[] = [];
 
-    // Create realistic 3D coin with beveled edges and detailed texture
-    const createRealisticCoin = (data: any) => {
-      const group = new THREE.Group();
-      const coinRadius = 0.8;
-      const coinThickness = 0.15;
-
-      // Create canvas texture with gradient and embossed effect
+    // ─── TEKSTUR COIN REALISTIS (tanpa ring silver) ───
+    const createRealisticCoinTexture = (data: any) => {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext('2d')!;
 
-      // Background
-      const bgGrad = ctx.createLinearGradient(0, 0, 512, 512);
-      const col = new THREE.Color(data.color);
-      const light = col.clone().lerp(new THREE.Color(0xffffff), 0.4);
-      const mid = col.clone();
-      const dark = col.clone().lerp(new THREE.Color(0x000000), 0.4);
-      
-      bgGrad.addColorStop(0, light.getStyle());
-      bgGrad.addColorStop(0.5, mid.getStyle());
-      bgGrad.addColorStop(1, dark.getStyle());
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 512, 512);
+      const baseColor = new THREE.Color(data.color);
+      const lightColor = baseColor.clone().lerp(new THREE.Color(0xffffff), 0.4);
+      const darkColor = baseColor.clone().lerp(new THREE.Color(0x000000), 0.3);
+      const isGold = data.isGold || false;
+      const isCrypto = data.isCrypto || false;
 
-      // Add radial gradient for 3D effect
-      const radGrad = ctx.createRadialGradient(256, 256, 0, 256, 256, 360);
-      radGrad.addColorStop(0, 'rgba(255,255,255,0.3)');
-      radGrad.addColorStop(0.5, 'rgba(255,255,255,0)');
-      radGrad.addColorStop(1, 'rgba(0,0,0,0.3)');
-      ctx.fillStyle = radGrad;
-      ctx.beginPath();
-      ctx.arc(256, 256, 360, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Outer rim - metallic effect
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 8;
-      ctx.globalAlpha = 0.4;
+      // ─ Background radial gradient ─
+      const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+      if (isGold) {
+        grad.addColorStop(0, '#f5d742');
+        grad.addColorStop(0.3, '#e8b830');
+        grad.addColorStop(0.6, '#c99220');
+        grad.addColorStop(0.85, '#a07018');
+        grad.addColorStop(1, '#7a5510');
+      } else if (isCrypto) {
+        grad.addColorStop(0, lightColor.getStyle());
+        grad.addColorStop(0.4, baseColor.getStyle());
+        grad.addColorStop(0.7, baseColor.getStyle());
+        grad.addColorStop(0.9, darkColor.getStyle());
+        grad.addColorStop(1, '#0a0a1a');
+      } else {
+        grad.addColorStop(0, lightColor.getStyle());
+        grad.addColorStop(0.3, baseColor.getStyle());
+        grad.addColorStop(0.6, baseColor.getStyle());
+        grad.addColorStop(0.85, darkColor.getStyle());
+        grad.addColorStop(1, '#1a1a2e');
+      }
+      ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(256, 256, 240, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.globalAlpha = 1;
-
-      // Inner circle with texture
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.beginPath();
-      ctx.arc(256, 256, 200, 0, Math.PI * 2);
       ctx.fill();
 
-      // Add noise/texture pattern for realism
-      const imageData = ctx.getImageData(0, 0, 512, 512);
-      const data_arr = imageData.data;
-      for (let i = 0; i < data_arr.length; i += 4) {
-        if (Math.random() > 0.97) {
-          data_arr[i + 3] = Math.random() * 50; // Random noise
-        }
+      // ─ Inner emboss rings (tanpa ring silver luar) ─
+      for (let r = 220; r > 40; r -= 12) {
+        ctx.strokeStyle = r % 24 === 0 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(256, 256, r, 0, Math.PI * 2);
+        ctx.stroke();
       }
-      ctx.putImageData(imageData, 0, 0);
 
-      // Symbol text with shadow and glow
+      // ─ "IN GOD WE TRUST" (top arc) ─
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      
-      // Text shadow
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 20;
+      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.4)';
+      ctx.font = 'bold 30px "Times New Roman", "Inter", serif';
+      const text1 = 'IN GOD WE TRUST';
+      for (let i = 0; i < text1.length; i++) {
+        const angle = -Math.PI * 0.7 + (i / (text1.length - 1)) * Math.PI * 1.4;
+        const x = 256 + Math.cos(angle) * 185;
+        const y = 256 + Math.sin(angle) * 185;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle + Math.PI / 2);
+        ctx.fillText(text1[i], 0, 0);
+        ctx.restore();
+      }
+
+      // ─ "PLURIBUS UNUM" (bottom arc) ─
+      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.3)';
+      ctx.font = 'bold 24px "Times New Roman", "Inter", serif';
+      const text2 = 'PLURIBUS UNUM';
+      for (let i = 0; i < text2.length; i++) {
+        const angle = Math.PI * 0.7 - (i / (text2.length - 1)) * Math.PI * 1.4;
+        const x = 256 + Math.cos(angle) * 185;
+        const y = 256 + Math.sin(angle) * 185;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle - Math.PI / 2);
+        ctx.fillText(text2[i], 0, 0);
+        ctx.restore();
+      }
+
+      // ─ "UNITED STATES OF AMERICA" ─
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = isGold ? '#a07018' : 'rgba(255,255,255,0.25)';
+      ctx.font = 'bold 22px "Times New Roman", "Inter", serif';
+      ctx.fillText('UNITED STATES OF AMERICA', 256, 110);
+      ctx.fillStyle = isGold ? '#8c6010' : 'rgba(255,255,255,0.2)';
+      ctx.font = 'bold 18px "Times New Roman", "Inter", serif';
+      ctx.fillText('ONE ' + data.label.toUpperCase(), 256, 140);
+
+      // ─ CENTER SYMBOL ─
+      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      ctx.shadowBlur = 25;
       ctx.shadowOffsetX = 3;
       ctx.shadowOffsetY = 3;
-      ctx.fillStyle = 'rgba(255,255,255,0.2)';
-      ctx.font = 'bold 150px "Arial", sans-serif';
-      ctx.fillText(data.symbol, 256, 256);
 
-      // Main symbol text
-      ctx.shadowColor = 'transparent';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 140px "Arial", sans-serif';
-      ctx.fillText(data.symbol, 256, 256);
+      if (isCrypto) {
+        const iconMap: Record<string, string> = {
+          BTC: '₿',
+          ETH: '⟠',
+        };
+        ctx.fillStyle = data.color;
+        ctx.font = 'bold 160px "Inter", "Arial", sans-serif';
+        ctx.fillText(iconMap[data.label] || '◆', 256, 265);
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 44px "Inter", "Arial", sans-serif';
+        ctx.fillText(data.label, 256, 345);
+      } else if (isGold) {
+        ctx.fillStyle = '#f5c842';
+        ctx.font = 'bold 180px "Inter", "Arial", sans-serif';
+        ctx.fillText('Au', 256, 255);
+        ctx.shadowBlur = 5;
+        ctx.fillStyle = '#8c6010';
+        ctx.font = 'bold 32px "Inter", "Arial", sans-serif';
+        ctx.fillText('999.9', 256, 330);
+        ctx.fillText('GOLD', 256, 375);
+      } else {
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = 'bold 150px "Inter", "Arial", sans-serif';
+        ctx.fillText(data.symbol, 256, 270);
+        ctx.shadowBlur = 5;
+        ctx.fillStyle = '#444';
+        ctx.font = 'bold 38px "Inter", "Arial", sans-serif';
+        ctx.fillText(data.label, 256, 350);
+      }
 
-      // Label at bottom
-      ctx.font = 'bold 40px "Arial", sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillText(data.label, 256, 380);
+      // ─ Year ─
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.fillStyle = isGold ? '#a07018' : 'rgba(255,255,255,0.12)';
+      ctx.font = 'bold 20px "Inter", "Arial", sans-serif';
+      ctx.fillText('2025', 256, 455);
 
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.magFilter = THREE.LinearFilter;
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texturesToDispose.push(texture);
+      // ─ Reflection highlight ─
+      const hl = ctx.createRadialGradient(160, 160, 20, 200, 200, 200);
+      hl.addColorStop(0, 'rgba(255,255,255,0.15)');
+      hl.addColorStop(0.5, 'rgba(255,255,255,0.03)');
+      hl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hl;
+      ctx.beginPath();
+      ctx.arc(200, 200, 200, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Main coin face (flat top)
-      const mainGeo = new THREE.CylinderGeometry(coinRadius, coinRadius, coinThickness, 64, 8);
-      geometriesToDispose.push(mainGeo);
-      
-      const mainMat = new THREE.MeshPhysicalMaterial({
-        map: texture,
-        metalness: 0.88,
-        roughness: 0.15,
-        clearcoat: 0.6,
-        clearcoatRoughness: 0.1,
-        reflectivity: 1,
-        envMapIntensity: 2.2,
-        emissive: new THREE.Color(data.color),
-        emissiveIntensity: 0.08,
-        normalScale: new THREE.Vector2(0.5, 0.5),
-      });
-      materialsToDispose.push(mainMat);
-      
-      const mainMesh = new THREE.Mesh(mainGeo, mainMat);
-      mainMesh.castShadow = true;
-      mainMesh.receiveShadow = true;
-      group.add(mainMesh);
-
-      // Beveled edge rings for 3D effect
-      const edgeGeo1 = new THREE.TorusGeometry(coinRadius * 0.98, coinThickness * 0.3, 32, 64);
-      geometriesToDispose.push(edgeGeo1);
-      const edgeMat1 = new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color(data.color).multiplyScalar(0.8),
-        metalness: 0.92,
-        roughness: 0.1,
-        clearcoat: 0.8,
-      });
-      materialsToDispose.push(edgeMat1);
-      const edgeMesh1 = new THREE.Mesh(edgeGeo1, edgeMat1);
-      edgeMesh1.position.z = coinThickness * 0.3;
-      edgeMesh1.castShadow = true;
-      group.add(edgeMesh1);
-
-      // Second edge ring
-      const edgeGeo2 = new THREE.TorusGeometry(coinRadius * 0.96, coinThickness * 0.2, 32, 64);
-      geometriesToDispose.push(edgeGeo2);
-      const edgeMat2 = new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color(data.color).multiplyScalar(1.2),
-        metalness: 0.85,
-        roughness: 0.2,
-      });
-      materialsToDispose.push(edgeMat2);
-      const edgeMesh2 = new THREE.Mesh(edgeGeo2, edgeMat2);
-      edgeMesh2.position.z = -coinThickness * 0.3;
-      edgeMesh2.castShadow = true;
-      group.add(edgeMesh2);
-
-      // Highlight ring for extra realism
-      const highlightGeo = new THREE.TorusGeometry(coinRadius * 0.7, coinThickness * 0.08, 32, 64);
-      geometriesToDispose.push(highlightGeo);
-      const highlightMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.15,
-      });
-      materialsToDispose.push(highlightMat);
-      const highlightMesh = new THREE.Mesh(highlightGeo, highlightMat);
-      highlightMesh.position.z = coinThickness * 0.5;
-      group.add(highlightMesh);
-
-      group.rotation.x = Math.PI / 2;
-      return group;
+      return new THREE.CanvasTexture(canvas);
     };
 
     coinData.forEach((data) => {
       const group = new THREE.Group();
-      const coinGroup = createRealisticCoin(data);
-      group.add(coinGroup);
+      const size = 0.85;
+      const texture = createRealisticCoinTexture(data);
+
+      const material = new THREE.MeshPhysicalMaterial({
+        map: texture,
+        metalness: data.isGold ? 0.95 : 0.8,
+        roughness: data.isGold ? 0.12 : 0.2,
+        clearcoat: 0.5,
+        clearcoatRoughness: 0.15,
+        reflectivity: 1,
+        envMapIntensity: 2.0,
+        emissive: new THREE.Color(data.color),
+        emissiveIntensity: data.isCrypto ? 0.12 : 0.04,
+      });
+
+      const geo = new THREE.CylinderGeometry(size, size, size * 0.14, 64);
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.rotation.x = Math.PI / 2;
+      group.add(mesh);
+
+      // ─ Inner glow ring (HANYA glow, BUKAN ring silver) ─
+      const glowGeo = new THREE.TorusGeometry(size * 0.88, size * 0.025, 24, 48);
+      const glowMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        emissive: new THREE.Color(data.color),
+        emissiveIntensity: 0.3,
+        transparent: true,
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+        metalness: 0,
+        roughness: 0.5,
+      });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+      glow.rotation.x = Math.PI / 2;
+      glow.position.z = 0.005;
+      group.add(glow);
 
       group.position.set(data.pos[0], data.pos[1], data.pos[2]);
       group.userData = {
@@ -277,31 +285,30 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         rotSpeed: 0.3 + Math.random() * 0.3,
         floatAmp: 0.08 + Math.random() * 0.06,
         baseY: data.pos[1],
-        isCrypto: data.isCrypto || false,
-        isGold: data.isGold || false,
-        coinGroup: coinGroup,
+        mat: material,
       };
 
       scene.add(group);
       coinObjects.push(group);
     });
 
-    // Decorative ring
+    // ─ Decorative ring (orbit) ─
     const ringPoints = [];
-    for (let i = 0; i <= 64; i++) {
-      const theta = (i / 64) * Math.PI * 2;
-      ringPoints.push(new THREE.Vector3(Math.cos(theta) * 4.2, -0.2, Math.sin(theta) * 4.2));
+    for (let i = 0; i <= 80; i++) {
+      const theta = (i / 80) * Math.PI * 2;
+      ringPoints.push(new THREE.Vector3(
+        Math.cos(theta) * 4.5,
+        -0.2 + Math.sin(theta * 2) * 0.08,
+        Math.sin(theta) * 4.5
+      ));
     }
     const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
-    geometriesToDispose.push(ringGeo);
-    const ringMat = new THREE.LineBasicMaterial({
-      color: 0xf5c842, transparent: true, opacity: 0.08,
-    });
-    materialsToDispose.push(ringMat);
-    const ringLine = new THREE.Line(ringGeo, ringMat);
+    const ringLine = new THREE.Line(ringGeo, new THREE.LineBasicMaterial({
+      color: 0xf5c842, transparent: true, opacity: 0.06,
+    }));
     scene.add(ringLine);
 
-    // Raycaster
+    // ─ Raycaster ─
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let hovered: THREE.Group | null = null;
@@ -313,11 +320,13 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(coinObjects, true);
-      if (intersects.length > 0) {
-        let parent: THREE.Object3D | null = intersects[0].object;
+      const meshes: THREE.Mesh[] = [];
+      coinObjects.forEach(g => g.children.forEach(c => { if (c instanceof THREE.Mesh) meshes.push(c); }));
+      const hits = raycaster.intersectObjects(meshes);
+      if (hits.length > 0) {
+        let parent = hits[0].object.parent;
         while (parent && !parent.userData?.label) parent = parent.parent;
-        if (parent && parent.userData?.label) {
+        if (parent) {
           const symbol = parent.userData.symbol;
           onCoinClick?.(symbol);
         }
@@ -329,39 +338,27 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(coinObjects, true);
-      renderer.domElement.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
-      
+      const meshes: THREE.Mesh[] = [];
+      coinObjects.forEach(g => g.children.forEach(c => { if (c instanceof THREE.Mesh) meshes.push(c); }));
+      const hits = raycaster.intersectObjects(meshes);
+      renderer.domElement.style.cursor = hits.length > 0 ? 'pointer' : 'default';
       if (hovered) {
-        const coinGroup = hovered.userData.coinGroup;
-        if (coinGroup) {
-          coinGroup.children.forEach((child: any) => {
-            if (child.material?.emissiveIntensity !== undefined) {
-              child.material.emissiveIntensity = 0.08;
-            }
-          });
-        }
+        const ud = hovered.userData;
+        if (ud?.mat) ud.mat.emissiveIntensity = 0.04;
         hovered = null;
       }
-      
-      if (intersects.length > 0) {
-        let parent: THREE.Object3D | null = intersects[0].object;
+      if (hits.length > 0) {
+        let parent = hits[0].object.parent;
         while (parent && !parent.userData?.label) parent = parent.parent;
-        if (parent && parent.userData?.label) {
-          hovered = parent as THREE.Group;
-          const coinGroup = parent.userData.coinGroup;
-          if (coinGroup) {
-            coinGroup.children.forEach((child: any) => {
-              if (child.material?.emissiveIntensity !== undefined) {
-                child.material.emissiveIntensity = 0.25;
-              }
-            });
-          }
+        if (parent) {
+          hovered = parent;
+          const ud = parent.userData;
+          if (ud?.mat) ud.mat.emissiveIntensity = 0.5;
         }
       }
     });
 
-    // Animation
+    // ─ Animation ─
     const clock = new THREE.Clock();
     function animate() {
       const t = clock.getElapsedTime();
@@ -370,13 +367,13 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
         if (ud?.floatOffset !== undefined) {
           const float = Math.sin(t * 0.8 + ud.floatOffset) * ud.floatAmp;
           obj.position.y = ud.baseY + float;
-          obj.rotation.y += ud.rotSpeed * 0.01;
+          obj.rotation.y += ud.rotSpeed * 0.012;
         }
       });
       controls.update();
       renderer.render(scene, camera);
       labelRenderer.render(scene, camera);
-      animationFrameRef.current = requestAnimationFrame(animate);
+      requestAnimationFrame(animate);
     }
     animate();
 
@@ -392,31 +389,9 @@ export default function GalaxySceneContent({ onCoinClick }: GalaxySceneContentPr
 
     return () => {
       window.removeEventListener('resize', resize);
-      
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      geometriesToDispose.forEach(geo => geo.dispose());
-      materialsToDispose.forEach(mat => mat.dispose());
-      texturesToDispose.forEach(tex => tex.dispose());
-      
-      starsGeo?.dispose();
-      starsMaterial?.dispose();
-      
+      container.removeChild(renderer.domElement);
+      container.removeChild(labelRenderer.domElement);
       renderer.dispose();
-      labelRenderer.domElement.remove?.();
-      
-      try {
-        if (container.contains(renderer.domElement)) {
-          container.removeChild(renderer.domElement);
-        }
-        if (container.contains(labelRenderer.domElement)) {
-          container.removeChild(labelRenderer.domElement);
-        }
-      } catch (e) {
-        // Element already removed
-      }
     };
   }, [onCoinClick]);
 
