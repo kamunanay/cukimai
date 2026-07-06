@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { getForexRates } from '../services/forex';
-import LivePriceCard from '../components/ui/live-price-card';
-import PriceChart from '../components/charts/price-chart';
-import CurrencyConverter from '../components/ui/currency-converter';
+import { getForexRates } from '../../services/forex';
+import LivePriceCard from '../../components/ui/live-price-card';
+import PriceChart from '../../components/charts/price-chart';
+import CurrencyConverter from '../../components/ui/currency-converter';
 
 export default function ForexPage() {
   const { data, isLoading } = useQuery({
