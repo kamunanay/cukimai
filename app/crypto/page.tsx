@@ -2,9 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { getCryptoPrices } from '../services/crypto';
-import LivePriceCard from '../components/ui/live-price-card';
-import PriceChart from '../components/charts/price-chart';
+import { getCryptoPrices } from '../../services/crypto';
+import LivePriceCard from '../../components/ui/live-price-card';
+import PriceChart from '../../components/charts/price-chart';
 
 export default function CryptoPage() {
   const { data, isLoading } = useQuery({
