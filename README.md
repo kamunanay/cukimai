@@ -8,6 +8,7 @@ A modern financial platform for **Forex**, **Crypto**, and **Gold** with a premi
 
 <p>
 <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=nextdotjs">
+  
 ```html
 <div align="center">
 
