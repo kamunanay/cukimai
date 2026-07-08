@@ -153,14 +153,50 @@ A modern financial platform for **Forex**, **Crypto**, and **Gold** with a premi
 ## Tech Stack
 
 | Technology | Purpose |
-|:-----------|:--------|
-| Next.js 15 | Framework (App Router) |
-| TypeScript | Type safety |
-| Tailwind CSS | Styling |
-| Three.js | 3D rendering |
-| Framer Motion | Animations |
-| TanStack Query | Data fetching |
-| Lightweight Charts | Trading charts |
+<div align="center">
+
+# CUKIMAI
+
+### World Financial Galaxy
+
+Modern financial platform for Forex, Crypto & Gold.
+
+<p>
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=nextdotjs">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black">
+  <img src="https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white">
+  <img src="https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=threedotjs">
+  <img src="https://img.shields.io/github/license/kamunanay/cukimai?style=flat-square">
+</p>
+
+<img src="https://your-banner-image-or-gif.gif" width="100%">
+
+</div>
+
+---
+
+## Features
+
+- Real-time Forex
+- Real-time Crypto
+- Real-time Gold
+- Interactive 3D Coin Galaxy
+- TradingView Charts
+- Currency Converter
+- Responsive UI
+
+---
+
+## Stack
+
+- Next.js 15
+- TypeScript
+- Tailwind CSS
+- Three.js
+- React Three Fiber
+- Framer Motion
+- GSAP
 
 ---
 
@@ -173,34 +209,10 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000
-
-Deploy to Cloudflare Pages
-
-```bash
-npm run build
-```
-
-Upload the out folder to Cloudflare Pages.
-
 ---
 
-Data Sources
+## License
 
-Data API Status
-Forex ExchangeRate-API Free
-Crypto CoinGecko Free
-Gold Gold-API Free
+Licensed under the **MIT License**.
 
----
-
-License
-
-MIT © 2026 — kamunanay
-
----
-
-<div align="center">
-  <sub>premium · cinematic · fintech</sub>
-</div>
-```
+https://github.com/kamunanay/cukimai/blob/main/LICENSE
