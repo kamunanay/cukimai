@@ -87,6 +87,10 @@ A modern financial platform for **Forex**, **Crypto**, and **Gold** with a premi
 <div align="center">
 
 <!-- ─── ANIMATED LOGO ─── -->
+```markdown
+<div align="center">
+
+<!-- ─── ANIMATED LOGO ─── -->
 <div style="background: radial-gradient(ellipse at 30% 20%, #1a1f3a, #0b0d1a); padding: 40px 24px 32px; border-radius: 24px; border: 1px solid rgba(245, 200, 66, 0.12); box-shadow: 0 0 80px rgba(245, 200, 66, 0.04); margin-bottom: 20px;">
 
   <div style="display: inline-block; animation: float-coin 3s ease-in-out infinite;">
