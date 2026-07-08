@@ -166,13 +166,26 @@ Modern financial platform for Forex, Crypto & Gold.
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white">
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black">
   <img src="https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white">
-  <img src="https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=threedotjs">
-  <img src="https://img.shields.io/github/license/kamunanay/cukimai?style=flat-square">
+<p align="center">
+  <img src="docs/banner.png" alt="CUKIMAI Banner">
 </p>
 
-<img src="https://your-banner-image-or-gif.gif" width="100%">
+<h1 align="center">CUKIMAI</h1>
 
-</div>
+<p align="center">
+  World Financial Galaxy
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs">
+  <img src="https://img.shields.io/badge/TypeScript-blue?logo=typescript">
+  <img src="https://img.shields.io/badge/Tailwind-38BDF8?logo=tailwindcss">
+  <img src="https://img.shields.io/github/license/kamunanay/cukimai">
+</p>
+
+<p align="center">
+  <img src="docs/demo.gif" width="100%">
+</p>
 
 ---
 
@@ -180,23 +193,10 @@ Modern financial platform for Forex, Crypto & Gold.
 
 - Real-time Forex
 - Real-time Crypto
-- Real-time Gold
-- Interactive 3D Coin Galaxy
+- Live Gold Price
+- 3D Coin Galaxy
 - TradingView Charts
 - Currency Converter
-- Responsive UI
-
----
-
-## Stack
-
-- Next.js 15
-- TypeScript
-- Tailwind CSS
-- Three.js
-- React Three Fiber
-- Framer Motion
-- GSAP
 
 ---
 
@@ -204,8 +204,11 @@ Modern financial platform for Forex, Crypto & Gold.
 
 ```bash
 git clone https://github.com/kamunanay/cukimai.git
+
 cd cukimai
+
 npm install
+
 npm run dev
 ```
 
@@ -213,6 +216,4 @@ npm run dev
 
 ## License
 
-Licensed under the **MIT License**.
-
-https://github.com/kamunanay/cukimai/blob/main/LICENSE
+[MIT License](LICENSE)
