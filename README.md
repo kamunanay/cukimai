@@ -74,55 +74,40 @@ A modern financial platform for **Forex**, **Crypto**, and **Gold** with a premi
 |:---------|:------------|
 | 🌍 **Galaxy** | Interactive 3D coin universe with realistic assets |
 | 💱 **Forex** | Live USD rates for 17+ currencies |
-| ₿ **Crypto** | Real-time prices: BTC, ETH, SOL, XRP |
-| 🥇 **Gold** | Live XAU/USD spot price |
-| 📈 **Charts** | TradingView charts — 5 timeframes |
-| 🔄 **Converter** | Instant USD → all currencies |
-
----
-
-## ⚡ Stack
-
-| Technology | Role |
-|:-----------|:-----|
-| Next.js 15 | Framework (App Router) |
-| TypeScript | Type safety |
-| Tailwind CSS | Styling |
-| Three.js | 3D rendering |
-| Framer Motion | Animations |
-| TanStack Query | Data fetching |
-
----
-
-## 🚀 Start
-
-```bash
-git clone https://github.com/kamunanay/cukimai.git
-cd cukimai
-npm install
-npm run dev
-```
-
-Deploy: npm run build → upload out/ to Cloudflare Pages.
-
----
-
-📊 Data Sources
-
-Data API Status
-Forex ExchangeRate-API ✅ Free
-Crypto CoinGecko ✅ Free
-Gold Gold-API ✅ Free
-
----
-
-📄 License
-
-MIT © 2026 — kamunanay
-
----
-
 <div align="center">
-  <sub>✦ premium · cinematic · fintech ✦</sub>
+
+<!-- ANIMATED LOGO -->
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=3000&pause=500&color=F5C842&center=true&vCenter=true&width=435&lines=CUKIMAI;World+Financial+Galaxy" alt="CUKIMAI" />
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind-3.4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/Three.js-0.160-000000?style=for-the-badge&logo=three.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-44CC11?style=for-the-badge" />
+</p>
+
+<p align="center">
+  <b>🌍 3D Interactive Financial Dashboard • Forex • Crypto • Gold</b>
+</p>
+
 </div>
-```
+
+---
+
+## ✨ Features
+
+| Category | Description |
+|:---------|:------------|
+| 🌌 **3D Galaxy** | Interactive coin universe with realistic 3D assets |
+| 💱 **Forex** | Live USD rates for 17+ currencies |
+| ₿ **Crypto** | Real-time prices for BTC, ETH, SOL, XRP |
+| 🥇 **Gold** | Live XAU/USD spot price |
+| 📈 **Charts** | TradingView charts with 5 timeframes |
+| 🔄 **Converter** | Instant currency conversion (USD → all) |
+| 🎨 **UI** | Glassmorphism, gold accents, dark luxury theme |
+| 📱 **Responsive** | Desktop, tablet, mobile ready |
+
+---
+
+## 🛠️ Tech Stack
