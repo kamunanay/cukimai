@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="docs/banner.png" alt="CUKIMAI">
-</p>
-
-<h1 align="center">CUKIMAI</h1>
-<div align="center">
 
 # CUKIMAI
 
