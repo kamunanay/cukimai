@@ -126,18 +126,6 @@ Made with ❤️ by **CUKIMAI**
 
 ---
 
-## Quick Start
-
-```bash
-git clone https://github.com/kamunanay/cukimai.git
-
-cd cukimai
-
-npm install
-
-npm run dev
-```
-
 ---
 
 ## License
